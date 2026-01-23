@@ -13,7 +13,6 @@
 #define MAX_FUNCS 128
 #define MAX_CALL_DEPTH 64
 #define MAX_ARGS  8
-
 #define VYOM_VERSION "Vyom v0.4.3 (stable, no shadowing)"
 
 // ================= TYPES =================
