@@ -1,6 +1,7 @@
 # =========================================
 # Vyom v0.4 — main.vy
 # Official Progressive Demo (NUMERIC SAFE)
+# NO SHADOWING VERSION
 # =========================================
 
 # 1️⃣ Dynamic variables
@@ -31,12 +32,12 @@ show(42)
 show(99)
 
 
-# 5️⃣ Local scope demo
+# 5️⃣ Local scope demo (NO SHADOWING)
 temp = 999
 
 def local_demo():
-    temp = 42
-    print temp
+    local_temp = 42
+    print local_temp
 
 local_demo()
 print temp

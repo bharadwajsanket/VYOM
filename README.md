@@ -13,21 +13,20 @@
 
 Vyom is a small, indentation-based scripting language written in C.
 
-It is designed with a strong focus on **clarity, predictability, and control**, without hidden abstractions.
+It is designed with a strong focus on **clarity, predictability, and control** —
+without virtual machines, bytecode layers, or hidden execution models.
 
-Vyom is not positioned against any existing language.  
-It exists to offer a **different design point**: simple syntax, direct execution, and full transparency.
+Vyom is not positioned as a replacement for existing languages.  
+It exists as a **clear, honest execution model** you can fully understand.
 
 ---
 
 ## 🚀 Current Version
 
-<b>Vyom v0.4 — Stable (Functions Complete)</b>
+**Vyom v0.4 — Stable (Functions Complete)**
 
-This release completes the function system and establishes Vyom as a usable procedural language with:
-- clear execution rules
-- local scope
-- explicit behavior
+This release completes the function system and establishes Vyom as a usable,
+explicit procedural language with local scope and predictable behavior.
 
 ---
 
@@ -75,101 +74,27 @@ This release completes the function system and establishes Vyom as a usable proc
 
 ---
 
-## ✨ Features (v0.4)
-
-### Variables
-```vy
-x = 10
-y = 5
-```
-
-### Functions
-```vy
-def greet():
-    print 100
-
-greet()
-```
-
-### Parameters
-```vy
-def show(v):
-    print v
-
-show(42)
-```
-
-### Return values
-```vy
-def add(a, b):
-    return a + b
-
-print add(3, 4)
-```
-
-### Local Scope
-```vy
-temp = 999
-
-def local_demo():
-    temp = 42
-    print temp
-
-local_demo()
-print temp
-```
-
-### Nested Calls
-```vy
-def square(n):
-    return n * n
-
-def sum_of_squares(a, b):
-    return square(a) + square(b)
-
-print sum_of_squares(3, 4)
-```
-
----
-
-## 🧪 Canonical Test (v0.4)
-
-Expected output:
-```
-10
-5
-20
-100
-42
-99
-42
-999
-7
-25
-999
-```
-
----
-
-## ⬇️ Download
+## ⚙️ Setup
 
 ### Windows
+Download the latest release from GitHub:
 
-Vyom v0.4 (Stable)  
 https://github.com/Sanket-Bharadwaj/VYOM/releases
 
 Includes:
-- vyom.exe
-- install.bat
-- uninstall.bat
-- README.md
-- examples/main.vy
+- `vyom.exe`
+- `install.bat`
+- `uninstall.bat`
+- `README.md`
+- `examples/main.vy`
+
+Run `install.bat` once and restart the terminal.
 
 ---
 
-## 🛠 Build from Source
-
 ### macOS / Linux
+Build from source:
+
 ```bash
 gcc src/vy.c -o vyom
 chmod +x vyom
@@ -178,10 +103,13 @@ sudo mv vyom /usr/local/bin/
 
 ---
 
-## ▶️ Run
+## ▶️ Quick Example
 
-```bash
-vyom examples/main.vy
+```vy
+def add(a, b):
+    return a + b
+
+print add(3, 4)
 ```
 
 ---
@@ -189,7 +117,7 @@ vyom examples/main.vy
 ## ❌ Intentional Limitations (v0.4)
 
 - No strings in expressions
-- No conditionals yet (`if` planned in v0.5)
+- No conditionals yet (`if` planned next)
 - No loops
 - No arrays / lists
 - No closures
@@ -200,7 +128,7 @@ These are deliberate design decisions.
 
 ## 🛣 Roadmap
 
-### v0.5 (planned)
+### v0.5
 - `if / else`
 - Comparison operators
 - Boolean logic

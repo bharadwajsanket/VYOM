@@ -1,13 +1,13 @@
 @echo off
-title Vyom Installer v0.2
+title Vyom Installer v0.4
 color 0A
 
 cls
 echo ========================================
-echo        Vyom v0.2 Installer
+echo        Vyom v0.4 Installer
 echo ========================================
 echo.
-echo A minimal scripting language
+echo A minimal learning-first scripting language
 echo Created by Sanket Bharadwaj
 echo.
 echo ----------------------------------------
@@ -32,7 +32,7 @@ echo [2/4] Installing Vyom executable...
 if not exist "%~dp0vyom.exe" (
     color 0C
     echo     ! ERROR: vyom.exe not found
-    echo     ! Please keep install.bat and vyom.exe in same folder
+    echo     ! Keep install.bat and vyom.exe together
     pause
     exit /b 1
 )

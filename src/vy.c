@@ -1,6 +1,6 @@
 // Vyom Programming Language
 // Created by Sanket Bharadwaj
-// Vyom v0.4.1 — Functions Complete (Calls + Return + Local Scope)
+// Vyom v0.4.3 — Stable (Functions, Calls, Return, Local Scope, NO SHADOWING)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,15 +8,16 @@
 #include <ctype.h>
 
 #define MAX_LINES 2048
-#define MAX_LINE 512
-#define MAX_VARS 256
+#define MAX_LINE  512
+#define MAX_VARS  256
 #define MAX_FUNCS 128
 #define MAX_CALL_DEPTH 64
-#define MAX_ARGS 8
+#define MAX_ARGS  8
 
-#define VYOM_VERSION "Vyom v0.4.1 (functions complete)"
+#define VYOM_VERSION "Vyom v0.4.3 (stable, no shadowing)"
 
 // ================= TYPES =================
+
 typedef enum { V_NUM, V_STR } ValType;
 
 typedef struct {
@@ -47,6 +48,7 @@ typedef struct {
 } Line;
 
 // ================= STORAGE =================
+
 Line program[MAX_LINES];
 int line_count = 0;
 
@@ -65,6 +67,7 @@ int did_return = 0;
 int current_line = 0;
 
 // ================= HELPERS =================
+
 int get_indent(const char *s) {
     int n = 0;
     while (*s == ' ' || *s == '\t') { n++; s++; }
@@ -85,41 +88,26 @@ int find_block_end(int i) {
     return i;
 }
 
-void parse_args(const char *args_str, char args[MAX_ARGS][64], int *argc) {
-    *argc = 0;
-    if (strlen(args_str) == 0) return;
-    
-    char temp[MAX_LINE];
-    strcpy(temp, args_str);
-    
-    int paren_depth = 0;
-    char *start = temp;
-    
-    for (char *p = temp; ; p++) {
-        if (*p == '(') paren_depth++;
-        else if (*p == ')') paren_depth--;
-        else if ((*p == ',' && paren_depth == 0) || *p == 0) {
-            char save = *p;
-            *p = 0;
-            strcpy(args[(*argc)++], trim(start));
-            if (save == 0) break;
-            start = p + 1;
-        }
-    }
+void error(const char *msg, const char *name) {
+    printf("Line %d: Error: %s", current_line, msg);
+    if (name) printf(" '%s'", name);
+    printf("\n");
+    exit(1);
 }
 
 // ================= VARIABLES =================
+
+int find_global(const char *name) {
+    for (int i = global_count - 1; i >= 0; i--)
+        if (!strcmp(globals[i].name, name)) return i;
+    return -1;
+}
+
 int find_local(const char *name) {
     if (call_depth == 0) return -1;
     CallFrame *f = &call_stack[call_depth - 1];
     for (int i = f->local_count - 1; i >= 0; i--)
         if (!strcmp(f->locals[i].name, name)) return i;
-    return -1;
-}
-
-int find_global(const char *name) {
-    for (int i = global_count - 1; i >= 0; i--)
-        if (!strcmp(globals[i].name, name)) return i;
     return -1;
 }
 
@@ -138,28 +126,33 @@ int get_var(const char *name, Var *out) {
 }
 
 void set_var(Var v) {
+    int gi = find_global(v.name);
     int li = find_local(v.name);
+
+    // ❌ SHADOWING NOT ALLOWED
+    if (call_depth > 0 && gi != -1 && li == -1) {
+        error("variable shadows global variable", v.name);
+    }
+
     if (li != -1) {
-        if (call_stack[call_depth - 1].locals[li].explicit && 
+        if (call_stack[call_depth - 1].locals[li].explicit &&
             call_stack[call_depth - 1].locals[li].type != v.type) {
-            printf("Line %d: Type Error: cannot change type of '%s'\n", current_line, v.name);
-            return;
+            error("cannot change type of variable", v.name);
         }
         call_stack[call_depth - 1].locals[li] = v;
         return;
     }
 
     if (call_depth > 0) {
-        call_stack[call_depth - 1].locals[call_stack[call_depth - 1].local_count++] = v;
+        call_stack[call_depth - 1].locals[
+            call_stack[call_depth - 1].local_count++
+        ] = v;
         return;
     }
 
-    int gi = find_global(v.name);
     if (gi != -1) {
-        if (globals[gi].explicit && globals[gi].type != v.type) {
-            printf("Line %d: Type Error: cannot change type of '%s'\n", current_line, v.name);
-            return;
-        }
+        if (globals[gi].explicit && globals[gi].type != v.type)
+            error("cannot change type of variable", v.name);
         globals[gi] = v;
     } else {
         globals[global_count++] = v;
@@ -167,7 +160,6 @@ void set_var(Var v) {
 }
 
 // ================= EXPRESSIONS =================
-double eval_expr(const char *s, int *ok);
 
 int find_func(const char *name) {
     for (int i = 0; i < func_count; i++)
@@ -175,240 +167,196 @@ int find_func(const char *name) {
     return -1;
 }
 
+double eval_expr(const char *s, int *ok);
 void exec_statement(char *t);
 
-double call_function(Func *f, char args[MAX_ARGS][64], int argc, int needs_return) {
-    if (argc != f->param_count) {
-        printf("Line %d: Type Error: function '%s' expects %d arguments, got %d\n", 
-               current_line, f->name, f->param_count, argc);
-        return 0;
-    }
+// -------- function call (expression context) --------
+double call_function_expr(Func *f, char args[MAX_ARGS][64], int argc) {
+    if (argc != f->param_count)
+        error("incorrect argument count for function", f->name);
 
-    if (call_depth >= MAX_CALL_DEPTH) {
-        printf("Line %d: Error: call stack overflow\n", current_line);
-        return 0;
-    }
+    if (call_depth >= MAX_CALL_DEPTH)
+        error("call stack overflow", NULL);
 
-    // CRITICAL: Evaluate arguments BEFORE creating new call frame
-    double arg_values[MAX_ARGS];
+    double values[MAX_ARGS];
     for (int i = 0; i < argc; i++) {
         int ok;
-        arg_values[i] = eval_expr(args[i], &ok);
-        if (!ok) {
-            return 0;
-        }
+        values[i] = eval_expr(args[i], &ok);
     }
 
-    // NOW create new call frame
     call_stack[call_depth].local_count = 0;
     call_depth++;
 
-    // Set parameters with pre-evaluated values
     for (int i = 0; i < argc; i++) {
-        Var v;
+        if (find_global(f->params[i]) != -1)
+            error("parameter shadows global variable", f->params[i]);
+
+        Var v = {0};
         strcpy(v.name, f->params[i]);
-        v.explicit = 0;
         v.type = V_NUM;
-        v.num = arg_values[i];
+        v.num = values[i];
         set_var(v);
     }
 
-    return_value = 0;
     did_return = 0;
 
     for (int i = f->start; i < f->end && !did_return; i++) {
         current_line = program[i].line_num;
-        char buf[MAX_LINE];
-        strcpy(buf, program[i].text);
-        char *t = trim(buf);
-
-        if (*t == '#' || !*t) continue;
-
-        exec_statement(t);
+        char tmp[MAX_LINE];
+        strcpy(tmp, program[i].text);
+        exec_statement(trim(tmp));
     }
 
     call_depth--;
-    
-    if (needs_return && !did_return) {
-        printf("Line %d: Error: function '%s' missing return statement\n", current_line, f->name);
-        return 0;
-    }
-    
-    did_return = 0;
+
+    if (!did_return)
+        error("function missing return statement", f->name);
+
     return return_value;
 }
 
-double eval_term(const char *s, int *ok);
+// -------- function call (statement context) --------
+void call_function_stmt(Func *f, char args[MAX_ARGS][64], int argc) {
+    if (call_depth >= MAX_CALL_DEPTH)
+        error("call stack overflow", NULL);
 
-double eval_expr(const char *s, int *ok) {
-    *ok = 1;
-    
-    char buf[MAX_LINE];
-    strcpy(buf, s);
-    char *str = trim(buf);
-    
-    char *plus = NULL;
-    char *minus = NULL;
-    char *mult = NULL;
-    char *divide = NULL;
-    
-    int paren_depth = 0;
-    for (char *p = str; *p; p++) {
-        if (*p == '(') paren_depth++;
-        else if (*p == ')') paren_depth--;
-        else if (paren_depth == 0) {
-            if (*p == '+') plus = p;
-            else if (*p == '-' && p != str) minus = p;
-            else if (*p == '*') mult = p;
-            else if (*p == '/') divide = p;
-        }
+    double values[MAX_ARGS];
+    for (int i = 0; i < argc; i++) {
+        int ok;
+        values[i] = eval_expr(args[i], &ok);
     }
-    
-    if (plus) {
-        char left_str[MAX_LINE], right_str[MAX_LINE];
-        strncpy(left_str, str, plus - str);
-        left_str[plus - str] = 0;
-        strcpy(right_str, plus + 1);
-        
-        double left = eval_expr(left_str, ok);
-        if (!*ok) return 0;
-        double right = eval_expr(right_str, ok);
-        if (!*ok) return 0;
-        return left + right;
+
+    call_stack[call_depth].local_count = 0;
+    call_depth++;
+
+    for (int i = 0; i < argc; i++) {
+        if (find_global(f->params[i]) != -1)
+            error("parameter shadows global variable", f->params[i]);
+
+        Var v = {0};
+        strcpy(v.name, f->params[i]);
+        v.type = V_NUM;
+        v.num = values[i];
+        set_var(v);
     }
-    
-    if (minus) {
-        char left_str[MAX_LINE], right_str[MAX_LINE];
-        strncpy(left_str, str, minus - str);
-        left_str[minus - str] = 0;
-        strcpy(right_str, minus + 1);
-        
-        double left = eval_expr(left_str, ok);
-        if (!*ok) return 0;
-        double right = eval_expr(right_str, ok);
-        if (!*ok) return 0;
-        return left - right;
+
+    did_return = 0;
+
+    for (int i = f->start; i < f->end; i++) {
+        current_line = program[i].line_num;
+        char tmp[MAX_LINE];
+        strcpy(tmp, program[i].text);
+        exec_statement(trim(tmp));
+        if (did_return) break;
     }
-    
-    if (mult) {
-        char left_str[MAX_LINE], right_str[MAX_LINE];
-        strncpy(left_str, str, mult - str);
-        left_str[mult - str] = 0;
-        strcpy(right_str, mult + 1);
-        
-        double left = eval_term(left_str, ok);
-        if (!*ok) return 0;
-        double right = eval_term(right_str, ok);
-        if (!*ok) return 0;
-        return left * right;
-    }
-    
-    if (divide) {
-        char left_str[MAX_LINE], right_str[MAX_LINE];
-        strncpy(left_str, str, divide - str);
-        left_str[divide - str] = 0;
-        strcpy(right_str, divide + 1);
-        
-        double left = eval_term(left_str, ok);
-        if (!*ok) return 0;
-        double right = eval_term(right_str, ok);
-        if (!*ok) return 0;
-        if (right == 0) {
-            printf("Line %d: Error: division by zero\n", current_line);
-            *ok = 0;
-            return 0;
-        }
-        return left / right;
-    }
-    
-    return eval_term(str, ok);
+
+    call_depth--;
+    did_return = 0; // ignore return value
 }
+
+// ================= EXPRESSIONS =================
 
 double eval_term(const char *s, int *ok) {
     *ok = 1;
-    
     char buf[MAX_LINE];
     strcpy(buf, s);
     char *str = trim(buf);
-    
-    char *lparen = strchr(str, '(');
-    if (lparen) {
+
+    char *lp = strchr(str, '(');
+    if (lp) {
         char fname[64];
-        int len = lparen - str;
-        strncpy(fname, str, len);
-        fname[len] = 0;
+        strncpy(fname, str, lp - str);
+        fname[lp - str] = 0;
         trim(fname);
-        
+
         int fi = find_func(fname);
         if (fi != -1) {
-            char *q = strrchr(str, ')');
-            if (!q) {
-                printf("Line %d: Error: unmatched parentheses\n", current_line);
-                *ok = 0;
-                return 0;
-            }
-            
-            char args_str[MAX_LINE];
-            strncpy(args_str, lparen + 1, q - lparen - 1);
-            args_str[q - lparen - 1] = 0;
-            
-            char args[MAX_ARGS][64];
-            int ac;
-            parse_args(trim(args_str), args, &ac);
+            char *rp = strrchr(str, ')');
+            if (!rp) error("unmatched parentheses", NULL);
 
-            return call_function(&funcs[fi], args, ac, 1);
+            char args_str[MAX_LINE];
+            strncpy(args_str, lp + 1, rp - lp - 1);
+            args_str[rp - lp - 1] = 0;
+
+            char args[MAX_ARGS][64];
+            int argc = 0;
+            char *tok = strtok(args_str, ",");
+            while (tok && argc < MAX_ARGS) {
+                strcpy(args[argc++], trim(tok));
+                tok = strtok(NULL, ",");
+            }
+
+            return call_function_expr(&funcs[fi], args, argc);
         }
     }
 
     Var v;
     if (get_var(str, &v)) {
-        if (v.type == V_NUM) return v.num;
-        printf("Line %d: Type Error: '%s' is not a number\n", current_line, str);
-        *ok = 0;
-        return 0;
+        if (v.type != V_NUM) error("not a number", str);
+        return v.num;
     }
-    
-    if (isdigit(*str) || (*str == '-' && isdigit(str[1]))) return atof(str);
 
-    printf("Line %d: Name Error: '%s' is not defined\n", current_line, str);
-    *ok = 0;
+    if (isdigit(*str) || (*str == '-' && isdigit(str[1])))
+        return atof(str);
+
+    error("name not defined", str);
     return 0;
 }
 
-// ================= EXECUTION =================
-void exec_statement(char *t) {
-    if (!strncmp(t, "return", 6)) {
-        if (call_depth == 0) {
-            printf("Line %d: Error: 'return' outside function\n", current_line);
-            return;
+double eval_expr(const char *s, int *ok) {
+    *ok = 1;
+    char buf[MAX_LINE];
+    strcpy(buf, s);
+    char *str = trim(buf);
+
+    int depth = 0;
+    for (char *p = str; *p; p++) {
+        if (*p == '(') depth++;
+        else if (*p == ')') depth--;
+        else if (depth == 0 && strchr("+-*/", *p)) {
+            char left[MAX_LINE], right[MAX_LINE];
+            strncpy(left, str, p - str);
+            left[p - str] = 0;
+            strcpy(right, p + 1);
+
+            double a = eval_expr(left, ok);
+            double b = eval_expr(right, ok);
+
+            if (*p == '+') return a + b;
+            if (*p == '-') return a - b;
+            if (*p == '*') return a * b;
+            if (*p == '/') {
+                if (b == 0) error("division by zero", NULL);
+                return a / b;
+            }
         }
-        char expr[MAX_LINE];
-        strcpy(expr, trim(t + 6));
+    }
+    return eval_term(str, ok);
+}
+
+// ================= EXECUTION =================
+
+void exec_statement(char *t) {
+    if (!*t || *t == '#') return;
+
+    if (!strncmp(t, "return", 6)) {
+        if (call_depth == 0)
+            error("return outside function", NULL);
         int ok;
-        return_value = eval_expr(expr, &ok);
+        return_value = eval_expr(t + 6, &ok);
         did_return = 1;
         return;
     }
 
     if (!strncmp(t, "print", 5)) {
-        t = trim(t + 5);
-        
-        if (*t == '"' && t[strlen(t) - 1] == '"') {
-            t[strlen(t) - 1] = 0;
-            printf("%s\n", t + 1);
-            return;
+        char *p = trim(t + 5);
+        if (*p == '"' && p[strlen(p) - 1] == '"') {
+            p[strlen(p) - 1] = 0;
+            printf("%s\n", p + 1);
+        } else {
+            int ok;
+            printf("%g\n", eval_expr(p, &ok));
         }
-        
-        Var v;
-        if (get_var(t, &v)) {
-            if (v.type == V_STR) printf("%s\n", v.str);
-            else printf("%g\n", v.num);
-            return;
-        }
-        
-        int ok;
-        double val = eval_expr(t, &ok);
-        if (ok) printf("%g\n", val);
         return;
     }
 
@@ -417,78 +365,57 @@ void exec_statement(char *t) {
         *eq = 0;
         char *lhs = trim(t);
         char *rhs = trim(eq + 1);
-        
-        Var v;
-        v.explicit = 0;
-        
-        char type[32] = "";
-        char name[64] = "";
-        
-        if (sscanf(lhs, "%31s %63s", type, name) == 2) {
-            if (!strcmp(type, "int") || !strcmp(type, "double")) {
-                v.explicit = 1;
-                v.type = V_NUM;
-                strcpy(v.name, name);
-            } else if (!strcmp(type, "string")) {
-                v.explicit = 1;
-                v.type = V_STR;
-                strcpy(v.name, name);
-            } else {
-                strcpy(v.name, lhs);
-            }
-        } else {
-            strcpy(v.name, lhs);
-        }
+
+        Var v = {0};
+        strcpy(v.name, lhs);
 
         if (*rhs == '"' && rhs[strlen(rhs) - 1] == '"') {
-            if (v.explicit && v.type != V_STR) {
-                printf("Line %d: Type Error: cannot assign string to non-string variable\n", current_line);
-                return;
-            }
-            v.type = V_STR;
             rhs[strlen(rhs) - 1] = 0;
             strcpy(v.str, rhs + 1);
+            v.type = V_STR;
         } else {
-            if (v.explicit && v.type != V_NUM) {
-                printf("Line %d: Type Error: cannot assign number to non-number variable\n", current_line);
-                return;
-            }
-            v.type = V_NUM;
             int ok;
             v.num = eval_expr(rhs, &ok);
-            if (!ok) return;
+            v.type = V_NUM;
         }
-        
+
         set_var(v);
         return;
     }
 
-    char *lparen = strchr(t, '(');
-    if (lparen) {
+    char *lp = strchr(t, '(');
+    if (lp) {
         char fname[64];
-        int len = lparen - t;
-        strncpy(fname, t, len);
-        fname[len] = 0;
+        strncpy(fname, t, lp - t);
+        fname[lp - t] = 0;
         trim(fname);
-        
+
         int fi = find_func(fname);
         if (fi != -1) {
-            char *q = strrchr(t, ')');
-            if (!q) return;
-            
-            char args_str[MAX_LINE];
-            strncpy(args_str, lparen + 1, q - lparen - 1);
-            args_str[q - lparen - 1] = 0;
-            
-            char args[MAX_ARGS][64];
-            int ac;
-            parse_args(trim(args_str), args, &ac);
+            char *rp = strrchr(t, ')');
+            if (!rp) error("unmatched parentheses", NULL);
 
-            call_function(&funcs[fi], args, ac, 0);
+            char args_str[MAX_LINE];
+            strncpy(args_str, lp + 1, rp - lp - 1);
+            args_str[rp - lp - 1] = 0;
+
+            char args[MAX_ARGS][64];
+            int argc = 0;
+            char *tok = strtok(args_str, ",");
+            while (tok && argc < MAX_ARGS) {
+                strcpy(args[argc++], trim(tok));
+                tok = strtok(NULL, ",");
+            }
+
+            call_function_stmt(&funcs[fi], args, argc);
             return;
         }
     }
+
+    error("unsupported statement", t);
 }
+
+// ================= FUNCTION COLLECTION =================
 
 void collect_functions() {
     for (int i = 0; i < line_count; i++) {
@@ -496,32 +423,20 @@ void collect_functions() {
         strcpy(buf, program[i].text);
         char *t = trim(buf);
 
-        if (*t == '#' || !*t) continue;
-
         if (!strncmp(t, "def", 3)) {
             Func *f = &funcs[func_count++];
-            
-            char temp[MAX_LINE];
-            strcpy(temp, t + 3);
-            char *lparen = strchr(temp, '(');
-            if (!lparen) continue;
-            
-            *lparen = 0;
-            strcpy(f->name, trim(temp));
+            char *p = strchr(t, '(');
+            *p = 0;
+            strcpy(f->name, trim(t + 3));
 
-            char *q = strchr(lparen + 1, ')');
-            if (q) *q = 0;
+            char *q = strchr(p + 1, ')');
+            *q = 0;
 
             f->param_count = 0;
-            char args_str[MAX_LINE];
-            strcpy(args_str, lparen + 1);
-            
-            char args[MAX_ARGS][64];
-            parse_args(trim(args_str), args, &f->param_count);
-            
-            for (int j = 0; j < f->param_count; j++) {
-                strcpy(f->params[j], args[j]);
-            }
+            char *tok = strtok(p + 1, ",");
+            while (tok)
+                strcpy(f->params[f->param_count++], trim(tok)),
+                tok = strtok(NULL, ",");
 
             f->start = i + 1;
             f->end = find_block_end(i);
@@ -529,34 +444,12 @@ void collect_functions() {
     }
 }
 
-void run_top_level() {
-    for (int i = 0; i < line_count; i++) {
-        current_line = program[i].line_num;
-        char buf[MAX_LINE];
-        strcpy(buf, program[i].text);
-        char *t = trim(buf);
-
-        if (*t == '#' || !*t) continue;
-
-        if (!strncmp(t, "def", 3)) {
-            i = find_block_end(i) - 1;
-            continue;
-        }
-
-        exec_statement(t);
-    }
-}
-
 // ================= MAIN =================
+
 int main(int argc, char **argv) {
     if (argc == 2 && !strcmp(argv[1], "--version")) {
         printf("%s\n", VYOM_VERSION);
         return 0;
-    }
-
-    if (argc < 2) {
-        printf("Usage: vyom <file.vy>\n");
-        return 1;
     }
 
     FILE *f = fopen(argv[1], "r");
@@ -566,18 +459,28 @@ int main(int argc, char **argv) {
     }
 
     char buf[MAX_LINE];
-    int line_num = 1;
+    int ln = 1;
     while (fgets(buf, sizeof(buf), f)) {
         int ind = get_indent(buf);
         strcpy(program[line_count].text, buf + ind);
         program[line_count].indent = ind;
-        program[line_count].line_num = line_num++;
+        program[line_count].line_num = ln++;
         line_count++;
     }
     fclose(f);
 
     collect_functions();
-    run_top_level();
-    
+
+    for (int i = 0; i < line_count; i++) {
+        current_line = program[i].line_num;
+        char tmp[MAX_LINE];
+        strcpy(tmp, program[i].text);
+        if (!strncmp(trim(tmp), "def", 3)) {
+            i = find_block_end(i) - 1;
+            continue;
+        }
+        exec_statement(trim(tmp));
+    }
+
     return 0;
 }
