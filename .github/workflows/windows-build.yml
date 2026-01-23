@@ -1,0 +1,36 @@
+name: Windows Build
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (GCC + windres)
+        uses: msys2/setup-msys2@v2
+        with:
+          install: >
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-binutils
+
+      - name: Build Vyom with icon
+        shell: msys2 {0}
+        run: |
+          windres src/vyom.rc -O coff -o vyom.res
+          gcc src/vy.c vyom.res -o vyom.exe
+
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: vyom-windows
+          path: vyom.exe
