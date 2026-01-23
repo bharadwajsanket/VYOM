@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Vyom</h1>
-<p align="center"><i>Minimal, learning-first scripting language</i></p>
+<p align="center"><i>Minimal, explicit scripting language</i></p>
 
 <p align="center">
   Created and maintained by <b>Sanket Bharadwaj</b>
@@ -11,13 +11,12 @@
 
 ---
 
-Vyom is a small, indentation-based scripting language written in C, designed with a strong focus on  
-<b>simplicity, clarity, and predictable behavior</b>.
+Vyom is a small, indentation-based scripting language written in C.
 
-Vyom is a <b>learning-first language</b> — built to help you understand how interpreters work,  
-how syntax is processed, and how programming languages evolve from a minimal core.
+It is designed with a strong focus on **clarity, predictability, and control**, without hidden abstractions.
 
-Vyom is intentionally small, explicit, and honest.
+Vyom is not positioned against any existing language.  
+It exists to offer a **different design point**: simple syntax, direct execution, and full transparency.
 
 ---
 
@@ -25,19 +24,21 @@ Vyom is intentionally small, explicit, and honest.
 
 <b>Vyom v0.4 — Stable (Functions Complete)</b>
 
-This release completes the function system and turns Vyom into a fully usable procedural language,
-while preserving its learning-first philosophy.
+This release completes the function system and establishes Vyom as a usable procedural language with:
+- clear execution rules
+- local scope
+- explicit behavior
 
 ---
 
 ## 🧠 Philosophy
 
 - Clarity over cleverness  
-- Learning-first, not feature-first  
-- Predictable execution  
-- No hidden magic  
+- Explicit behavior over convenience  
+- Simple syntax with visible execution  
+- No VM, no bytecode, no hidden layers  
 
-> If it teaches something, feels good to use, and doesn’t overcomplicate — it’s worth shipping.
+> If the code can be followed line by line, the design is correct.
 
 ---
 
@@ -154,8 +155,8 @@ Expected output:
 
 ### Windows
 
-- <b>Vyom v0.4 (Stable)</b>  
-  https://github.com/Sanket-Bharadwaj/VYOM/releases
+Vyom v0.4 (Stable)  
+https://github.com/Sanket-Bharadwaj/VYOM/releases
 
 Includes:
 - vyom.exe
@@ -193,7 +194,7 @@ vyom examples/main.vy
 - No arrays / lists
 - No closures
 
-These are design choices — not bugs.
+These are deliberate design decisions.
 
 ---
 
@@ -213,4 +214,4 @@ These are design choices — not bugs.
 ## 📜 License
 
 MIT License  
-Learn • Build • Explore 🚀
+Build • Explore • Understand
