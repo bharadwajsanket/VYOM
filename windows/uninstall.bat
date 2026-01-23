@@ -1,10 +1,10 @@
 @echo off
-title Vyom Uninstaller v0.4
+title Vyom Uninstaller v0.4.3
 color 0C
 
 cls
 echo ========================================
-echo        Vyom v0.4 Uninstaller
+echo        Vyom v0.4.3 Uninstaller
 echo ========================================
 echo.
 echo This will remove Vyom from your system.
@@ -33,7 +33,7 @@ timeout /t 1 >nul
 :: Step 2 — Remove files
 echo [2/3] Removing Vyom files...
 del /Q "%INSTALL_DIR%\vyom.exe" >nul 2>&1
-rmdir /Q "%INSTALL_DIR%" >nul 2>&1
+rmdir /S /Q "%INSTALL_DIR%" >nul 2>&1
 echo     + Files removed
 timeout /t 1 >nul
 
@@ -44,7 +44,7 @@ timeout /t 1 >nul
 color 0A
 echo.
 echo ========================================
-echo  Vyom v0.4 uninstalled successfully!
+echo  Vyom v0.4.3 uninstalled successfully!
 echo ========================================
 echo.
 echo NOTE:

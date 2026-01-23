@@ -23,10 +23,21 @@ It exists as a **clear, honest execution model** you can fully understand.
 
 ## 🚀 Current Version
 
-**Vyom v0.4 — Stable (Functions Complete)**
+**Vyom v0.4.3 — Stable (Functions Complete)**
 
-This release completes the function system and establishes Vyom as a usable,
-explicit procedural language with local scope and predictable behavior.
+This is a patch release on top of v0.4, focused on **stability, correctness, and packaging**.
+
+Vyom v0.4.3 preserves the complete function system introduced in v0.4:
+- function calls
+- parameters
+- return values
+- local scope
+- nested calls
+
+while fixing edge cases, improving runtime behavior, and providing
+a **reliable Windows binary and installer**.
+
+No new language features are introduced in this release.
 
 ---
 
@@ -79,7 +90,7 @@ explicit procedural language with local scope and predictable behavior.
 ### Windows
 Download the latest release from GitHub:
 
-https://github.com/Sanket-Bharadwaj/VYOM/releases
+https://github.com/Sanket-Bharadwaj/VYOM/releases/download/v0.4.3/Vyom-0.4.3-Windows.zip
 
 Includes:
 - `vyom.exe`
