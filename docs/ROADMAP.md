@@ -3,7 +3,7 @@
 Vyom evolves **intentionally and conservatively**.  
 Stability comes first. Features earn their place.
 
-This roadmap reflects **actual shipped versions**, not hypothetical ideas.
+This roadmap reflects **actual shipped versions and committed direction**, not hype.
 
 ---
 
@@ -26,10 +26,8 @@ This roadmap reflects **actual shipped versions**, not hypothetical ideas.
 
 **Focus:** structure without execution complexity
 
-- optional explicit typed variables
-  - `int`
-  - `double`
-  - `string`
+- optional explicit typed variables  
+  `int`, `double`, `string`
 - type locking for explicit variables
 - dynamic (untyped) variables still supported
 - function definitions using `def`
@@ -62,10 +60,10 @@ This roadmap reflects **actual shipped versions**, not hypothetical ideas.
 **Focus:** correctness, clarity, and freezing core semantics
 
 - bug fixes only
-- error-message improvements
 - edge-case handling
 - documentation refinement
-- NO new language features
+- packaging & installer fixes
+- **NO new language features**
 
 > v0.4.x defines Vyom’s **core identity**.
 
@@ -73,18 +71,31 @@ This roadmap reflects **actual shipped versions**, not hypothetical ideas.
 
 ## 🎯 v0.5 — Control Flow (Planned)
 
-**Focus:** decision-making without complexity
+**Focus:** readable decision-making without hidden behavior
 
+### Included
 - comparison operators  
-  `> < >= <= == !=`
-- numeric truth values (`0` = false, non-zero = true)
-- `if / else` blocks (indentation-based)
-- logical operators: `and`, `or`, `not`
+  `>  <  >=  <=  ==  !=`
+- numeric truth values  
+  `0 = false`, `non-zero = true`
+- conditionals:
+  ```vy
+  if condition:
+      ...
+  elif condition:
+      ...
+  else:
+      ...
+  ```
+- logical operators:  
+  `and`, `or`, `not`
 - short-circuit evaluation
 
-❌ No `elif`  
-❌ No boolean type  
-❌ No ternary operator  
+### Explicitly NOT included
+- ❌ boolean type (`True` / `False`)
+- ❌ ternary operator
+- ❌ switch / match
+- ❌ implicit truthiness rules beyond numbers
 
 ---
 
@@ -92,19 +103,19 @@ This roadmap reflects **actual shipped versions**, not hypothetical ideas.
 
 **Focus:** controlled repetition
 
-- looping construct (design TBD)
-- clear execution rules
+- loop construct (design TBD)
+- explicit execution rules
 - no hidden iterator magic
 
 ---
 
 ## 📦 v0.7 — Data Structures (Planned)
 
-**Focus:** minimal but useful containers
+**Focus:** minimal but practical containers
 
 - lists / arrays
 - indexing (`x[0]`)
-- length / basic helpers
+- length helpers
 
 ---
 
@@ -116,13 +127,23 @@ This roadmap reflects **actual shipped versions**, not hypothetical ideas.
 
 ---
 
-## 🔬 Long-Term (Exploratory)
+## 🧩 v0.9 — Usability & Polish (Optional)
 
-- modules / imports
-- minimal standard library
-- performance profiling & optimization
-- formatter / linter
-- language test suite
+- error message refinement
+- tooling improvements
+- performance profiling hooks
+
+---
+
+## 🚀 v1.0 — Core Language Frozen (Goal)
+
+**Definition of v1.0:**
+- stable syntax
+- stable semantics
+- complete procedural language
+- no breaking changes going forward
+
+> v1.0 is not about features — it is about **trust**.
 
 ---
 
