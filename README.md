@@ -65,13 +65,12 @@ No new language features are introduced in this release.
 - Assignment using `=`
 - Arithmetic expressions (`+ - * /`)
 - String concatenation
-- `if / else`
-- `repeat`
-- Human-friendly errors
+- Whitespace-tolerant parsing
+- Human-friendly error messages
 
 ### v0.3 — Types & Structure
 - Optional typed variables (`int`, `double`, `string`)
-- Type-locking
+- Type locking for explicit variables
 - Function definitions (`def`) — parsed only
 
 ### v0.4 — Functions Complete
