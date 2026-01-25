@@ -883,6 +883,5 @@ int main(int argc, char **argv) {
         
         exec_statement(stmt);
     }
-
     return 0;
 }
