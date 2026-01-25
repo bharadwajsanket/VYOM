@@ -1,6 +1,7 @@
 # =========================================
-# Vyom v0.4 — main.vy
-# Official Progressive Demo (NUMERIC SAFE)
+# Vyom v0.5 — main.vy
+# Official Progressive Demo
+# Control Flow + Comparisons
 # NO SHADOWING VERSION
 # =========================================
 
@@ -61,6 +62,45 @@ def sum_of_squares(a, b):
 print sum_of_squares(3, 4)
 
 
-# 8️⃣ End
-print 999
+# 8️⃣ Comparisons
+a = 10
+b = 20
 
+print a < b
+print a == b
+print a != b
+
+
+# 9️⃣ Logical operators
+print a < b and b > 15
+print a > b or b == 20
+print not (a == b)
+
+
+# 🔟 if / elif / else control flow
+score = 72
+
+if score >= 90:
+    print 1
+elif score >= 60:
+    print 2
+else:
+    print 3
+
+
+# 1️⃣1️⃣ Return inside condition
+def classify(n):
+    if n > 0:
+        return 1
+    elif n < 0:
+        return -1
+    else:
+        return 0
+
+print classify(10)
+print classify(-5)
+print classify(0)
+
+
+# 1️⃣2️⃣ End marker
+print 999

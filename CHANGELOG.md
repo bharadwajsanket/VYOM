@@ -7,7 +7,83 @@ features are introduced only when they can be explained cleanly and implemented 
 
 ---
 
-## v0.4.3 — Stable Core Finalization ⭐ (Latest)
+## v0.5 — Control Flow & Boolean Logic ⭐ (Latest)
+
+**Release focus:** structured decision-making with strict expression evaluation
+
+### Added
+- **Control flow statements**
+  - `if / elif / else` with indentation-based blocks
+  - Nested conditionals fully supported
+  - Returns inside conditionals
+  ```vy
+  if score >= 90:
+      print "A"
+  elif score >= 60:
+      print "B"
+  else:
+      print "C"
+  ```
+
+- **Comparison operators**
+  - `==` `!=` `<` `>` `<=` `>=`
+  - All comparisons return numeric values (1 or 0)
+  - Chained comparisons explicitly disallowed (`a < b < c` is an error)
+
+- **Logical operators**
+  - `and` `or` `not`
+  - **Short-circuit evaluation** implemented correctly
+  - Numeric truth model: `0` is false, non-zero is true
+  - All logical operators return 1 or 0
+  ```vy
+  print a < b and b > 15
+  print not (a == b)
+  ```
+
+- **Expression evaluation pipeline**
+  - Strict precedence: `or` < `and` < comparison < arithmetic < term
+  - Parentheses for grouping: `(a == b) and (c == d)`
+  - Operators cannot be used in assignment expressions
+
+### Fixed
+- Empty expression handling (blank lines no longer crash interpreter)
+- Parenthesized expression unwrapping `(a == b)` now evaluates correctly
+- Main loop block consumption for `if/elif/else` compounds
+- Assignment vs comparison safety (`==` cannot be used as `=`)
+- Whitespace-only lines properly skipped
+- Empty `print` statements handled gracefully
+
+### Changed
+- `return` statements now evaluate through full condition pipeline
+- Expression evaluation is strictly typed (no implicit conversions)
+- Error messages enhanced with context-specific details
+
+### Design Notes
+- **NO boolean type** — numeric truth model only
+- **NO ternary operator** — use `if/else` explicitly
+- **NO `else if`** — must use `elif` keyword
+- **NO loops yet** — coming in v0.6
+- Control flow follows Python-like syntax with C-like semantics
+
+### Error Handling Improvements
+- `elif without preceding if`
+- `else without preceding if`
+- `use 'elif' instead of 'else if'`
+- `chained comparisons not allowed`
+- `empty right-hand side in assignment`
+- `comparison is not assignment`
+
+### Technical Improvements
+- Defense-in-depth validation at pipeline entry points
+- Fail-safe defaults for edge cases
+- Robust empty string handling across all evaluation contexts
+- Production-grade error recovery
+
+> v0.5 completes the **procedural foundation** of Vyom. Control flow, comparisons, and logical operations work exactly as specified with no hidden behavior.
+
+---
+
+## v0.4.3 — Stable Core Finalization
 
 **Release focus:** correctness, strict scoping, and execution safety
 
@@ -132,3 +208,26 @@ features are introduced only when they can be explained cleanly and implemented 
 - `--version` and `--help`
 
 ---
+
+## Roadmap
+
+### v0.6 (Planned) — Loops & Iteration
+- `while` loops
+- `for` loops with range iteration
+- `break` and `continue`
+- Loop control flow
+
+### v0.7 (Planned) — Collections
+- Lists/arrays
+- Basic collection operations
+- Indexing and slicing
+
+### Future Considerations
+- String methods
+- File I/O
+- Module system
+- Standard library
+
+---
+
+**Philosophy:** Vyom grows only when features can be explained simply and behave predictably.
