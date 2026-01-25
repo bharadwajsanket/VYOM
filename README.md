@@ -26,8 +26,7 @@ Vyom is a **small, indentation-based scripting language** written in C.
 It is designed with a strong focus on **clarity, predictability, and control** —
 without virtual machines, bytecode layers, or hidden execution models.
 
-**Vyom is not trying to replace Python, JavaScript, or Lua.**  
-It exists as a **clear, honest execution model** you can fully understand.
+Every line of code executes exactly as written. The interpreter is transparent, readable, and direct.
 
 ### Core Principles
 - ✅ **Clarity over cleverness** — readable code beats terse code
@@ -84,10 +83,8 @@ print result
 ### Installation
 
 #### **Windows**
-Download the latest release:
-```
-https://github.com/Sanket-Bharadwaj/VYOM/releases/latest
-```
+
+**[Download Latest Release](https://github.com/Sanket-Bharadwaj/VYOM/releases/latest)**
 
 Includes:
 - `vyom.exe` (standalone executable)
@@ -113,7 +110,7 @@ Create `hello.vy`:
 ```vy
 # Hello World in Vyom
 name = "World"
-print "Hello, " + name
+print name
 ```
 
 Run it:
@@ -144,7 +141,7 @@ vyom hello.vy
 ### 🔐 Design Guarantees
 
 - **No variable shadowing** — local variables cannot hide globals
-- **Strict type safety** — typed variables maintain their type
+- **Variables hold values** — numeric or string values decided at runtime
 - **No implicit conversions** — what you see is what you get
 - **Short-circuit evaluation** — `and`/`or` evaluate lazily
 - **Clear error messages** — line numbers and context included
@@ -209,73 +206,73 @@ print factorial(5)  # 120
 
 More examples in [`examples/`](examples/) directory.
 
+### Print Semantics (v0.5)
+
+Print outputs a value followed by a newline:
+- `print x` — prints variable value
+- `print "text"` — prints string literal
+- `print expr` — prints evaluated expression
+- `print` — prints blank line
+
+Parentheses are not required.
+
+### String Concatenation Warning
+
+String concatenation works only between strings.
+Numeric values are not automatically converted to strings.
+
+### Recursion Limitations
+
+Deep recursion may cause stack overflow due to limited call stack.
+
 ---
 
 ## 🧠 Philosophy
 
 ### Why Vyom Exists
 
-Modern scripting languages are powerful, but often **opaque**.  
-You write code, but the execution model is hidden behind layers of abstraction.
+Most scripting languages operate as black boxes. Code goes in, results come out, but the execution model remains hidden behind layers of abstraction, optimization, and implicit behavior.
 
 **Vyom is different:**
 - Every line executes exactly as written
 - No hidden optimizations or rewrites
 - No virtual machine translating your code
-- The interpreter is ~500 lines of readable C
+- The interpreter is readable, direct C code
 
-### Design Decisions
+### Design Foundation
 
-#### ✅ What Vyom Has
-- Indentation-based blocks (like Python)
-- Static function collection (parsed before execution)
-- Call stack with local scope
-- Strict no-shadowing rule
-- Numeric truth model (0 = false, non-zero = true)
+Vyom prioritizes:
+- **Explicit execution** — the code you read is the code that runs
+- **Predictable behavior** — no surprises, no magic
+- **Direct interpretation** — no intermediate layers
+- **Clear semantics** — every construct has an obvious meaning
 
-#### ❌ What Vyom Doesn't Have (By Design)
-- No closures
-- No classes/objects
-- No dynamic typing (typed variables stay typed)
-- No implicit type coercion
-- No operator overloading
-- No syntactic sugar that obscures execution
-
-### Target Audience
-
-Vyom is for:
-- 🎓 **Learners** — understand how interpreters work
-- 🔧 **Tinkerers** — modify and experiment with language design
-- 📖 **Educators** — teach programming language concepts
-- 🧪 **Experimenters** — prototype language features
-
-Vyom is **not** for:
-- Production web applications
-- High-performance computing
-- Large-scale software systems
+The language evolves incrementally. Capabilities expand version by version. Correctness comes first.
 
 ---
 
-## 🛣️ Roadmap
+## 🛣️ Evolution & Roadmap
 
-### v0.6 (Next) — Loops & Iteration
-- [ ] `while` loops
-- [ ] `for` loops with range iteration
-- [ ] `break` and `continue`
-- [ ] Loop control flow
+Vyom grows incrementally. Future versions will expand capabilities while maintaining clarity and predictability.
+
+### v0.6 — Loops & Iteration
+- `while` loops
+- `for` loops with range iteration
+- `break` and `continue`
+- Loop control flow
 
 ### v0.7 — Collections
-- [ ] Lists/arrays
-- [ ] Indexing `list[0]`
-- [ ] Basic list operations
-- [ ] String indexing
+- Lists/arrays
+- Indexing `list[0]`
+- Basic list operations
+- String indexing
 
 ### v0.8 — String Methods
-- [ ] String manipulation
-- [ ] Built-in string functions
-- [ ] String formatting
+- String manipulation
+- Built-in string functions
+- String formatting
 
-### Future Considerations
+### Beyond
 - File I/O
 - Module system
 - Standard library
@@ -283,7 +280,24 @@ Vyom is **not** for:
 
 ---
 
+## 📊 Status
+
+| Feature | v0.5 | Planned |
+|---------|------|----------|
+| Variables | ✅ | ✅ |
+| Functions | ✅ | ✅ |
+| Arithmetic | ✅ | ✅ |
+| Comparisons | ✅ | ✅ |
+| Logic (and/or/not) | ✅ | ✅ |
+| if/elif/else | ✅ | ✅ |
+| Loops | ❌ | ✅ |
+| Lists | ❌ | ❌ |
+
+---
+
 ## 🏗️ Project Structure
+
+Example project layout (may vary by platform).
 
 ```
 VYOM/
@@ -291,13 +305,13 @@ VYOM/
 │   └── vy.c           # Main interpreter (single file)
 ├── examples/
 │   ├── main.vy        # Progressive demo
-│   ├── functions.vy   # Function examples
-│   └── logic.vy       # Control flow examples
+│   ├── test.vy        # Test examples
 ├── docs/
-│   ├── syntax.md      # Language reference
-│   └── guide.md       # User guide
+│   ├── SYNTAX.md      # Language reference
+│   ├── DESIGN_NOTES.md
+│   └── JOURNEY.md
 ├── assets/
-│   └── VYOM-Banner.png
+│   └── colors.md
 ├── windows/
 │   ├── vyom.exe
 │   ├── install.bat
@@ -311,22 +325,15 @@ VYOM/
 
 ## 🤝 Contributing
 
-Vyom is a **learning-first project**. Contributions are welcome, but must align with the core philosophy:
+Vyom is authored and maintained with a clear vision. Contributions should align with core principles: clarity, explicit behavior, and direct execution.
 
-### How to Contribute
-1. **Open an issue** to discuss the feature/fix
-2. **Fork the repository**
-3. **Make your changes** (keep them minimal and clear)
-4. **Add examples** demonstrating the feature
-5. **Submit a pull request**
+If you find a bug or have an idea:
+1. **Open an issue** to discuss it
+2. **Keep changes focused** — small, purposeful contributions
+3. **Preserve core principles** — clarity and explicit behavior
+4. **Include examples** — demonstrate the change
 
-### Contribution Guidelines
-- ✅ Keep changes **small and focused**
-- ✅ Preserve **clarity over cleverness**
-- ✅ Add **tests and examples**
-- ✅ Update **documentation**
-- ❌ Don't add features that obscure execution
-- ❌ Don't break backward compatibility without discussion
+Breaking changes require discussion before implementation.
 
 ---
 
@@ -352,18 +359,7 @@ Found a bug? Please report it!
 
 ---
 
-## 📊 Status
 
-| Feature | v0.4.3 | v0.5 | v0.6 (Planned) |
-|---------|--------|------|----------------|
-| Variables | ✅ | ✅ | ✅ |
-| Functions | ✅ | ✅ | ✅ |
-| Arithmetic | ✅ | ✅ | ✅ |
-| Comparisons | ❌ | ✅ | ✅ |
-| Logic (and/or/not) | ❌ | ✅ | ✅ |
-| if/elif/else | ❌ | ✅ | ✅ |
-| Loops | ❌ | ❌ | ✅ |
-| Lists | ❌ | ❌ | ❌ |
 
 ---
 
@@ -376,11 +372,11 @@ Found a bug? Please report it!
 
 ### Understanding Interpreters
 Vyom's source is deliberately simple. Study it to learn:
-- Lexical analysis (tokenization)
-- Expression evaluation
-- Function calls and scope
-- Control flow implementation
-- Error handling
+- How to tokenize code
+- How to evaluate expressions
+- How function calls work
+- How control flow is implemented
+- How to report errors clearly
 
 ---
 
@@ -396,15 +392,14 @@ MIT License — See [LICENSE](LICENSE) file for details.
 
 - **GitHub Issues** — Bug reports and feature requests
 - **Discussions** — Questions and ideas
-- **Email** — sanket@yourdomain.com (replace with your email)
+- **Email** — sanketbharadwaj15@gmail.com 
 
 ---
 
 <p align="center">
-  <i>Vyom is not the most powerful language.<br>
-  But it might be the most understandable one.</i>
+  <i>A language that does what it looks like it does.</i>
 </p>
 
 <p align="center">
-  Made with ❤️ by <b>Sanket Bharadwaj</b>
+  Authored by <b>Sanket Bharadwaj</b>
 </p>
