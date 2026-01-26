@@ -1,9 +1,9 @@
-# 🌌 Vyom — Language Syntax Guide (v0.5)
+# 🌌 Vyom — Language Syntax Guide (v0.6)
 
 Vyom is a small, indentation-based scripting language written in C.
 It is designed to be **explicit, predictable, and easy to reason about**.
 
-This document describes the **exact syntax supported in Vyom v0.5**.
+This document describes the **exact syntax supported in Vyom v0.6**.
 
 ---
 
@@ -92,6 +92,8 @@ Truth model:
 
 ## 🔀 Control Flow
 
+### if / elif / else
+
 ```vy
 if x > 10:
     print 100
@@ -100,6 +102,62 @@ elif x > 5:
 else:
     print 10
 ```
+
+---
+
+## 🔄 Loops (NEW in v0.6)
+
+### while loop
+
+```vy
+i = 0
+while (i < 5):
+    print i
+    i = i + 1
+```
+
+Rules:
+- Condition must be in **parentheses**
+- Colon required after closing parenthesis
+- Evaluates condition each iteration
+- Loop body must be indented
+
+### C-style for loop
+
+```vy
+for (i = 0; i < 5; i = i + 1):
+    print i
+```
+
+Rules:
+- Three expressions separated by **semicolons**: `init; condition; step`
+- All three parts must be present (but can be empty)
+- Condition evaluated at start of each iteration
+- Step executed after each iteration body
+- Mandatory parentheses and colon
+
+### for-in-range loop
+
+```vy
+for i in range(5):
+    print i
+```
+
+Rules:
+- Syntactic sugar for counting from 0 to n-1
+- Variable starts at 0, increments by 1
+- `range(n)` always produces: 0, 1, 2, ..., n-1
+- Equivalent to: `for (i = 0; i < n; i = i + 1):`
+
+---
+
+### Loop Constraints
+
+- No `break` or `continue` statements
+- Loops can contain `if/elif/else`
+- Loops can be nested
+- `return` statements exit function (including from inside loops)
+- Loop variables do not shadow globals (Vyom naming rule)
 
 ---
 
@@ -142,13 +200,15 @@ Errors are line-numbered and fatal.
 
 ---
 
-## ❌ Not Supported in v0.5
+## ❌ Not Supported in v0.6
 
 - strings in expressions
 - boolean type
-- loops
+- break / continue statements
 - arrays / lists
 - imports / modules
+- nested function definitions
+- variable shadowing
 
 ---
 

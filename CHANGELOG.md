@@ -1,13 +1,39 @@
 # 📜 Vyom — Changelog
 
-All notable changes to the **Vyom Programming Language** will be documented in this file.
-
-Vyom follows a **learning-first, explicit execution philosophy**.  
-Each version adds concepts gradually, without hiding behavior.
+All notable changes to the **Vyom Programming Language** are documented here.
 
 ---
 
-## 🚀 v0.5 — Control Flow & Boolean Logic (Current)
+## 🚀 v0.6 — Loops & Iteration (Current)
+
+**Release focus:** Controlled repetition and iteration patterns
+
+### ✨ Added
+- **While loops**: `while (condition):` with mandatory parentheses
+- **C-style for loops**: `for (init; condition; step):`
+- **Range-based for loops**: `for i in range(n):` — syntactic sugar for common patterns
+- **Loop nesting**: loops inside functions, conditionals, and other loops
+- **Return from loops**: `return` inside a loop properly exits the function
+
+### 🔒 Rules & Guarantees
+- Mandatory parentheses in while conditions
+- Mandatory colons after all loop headers
+- Semicolon-separated clauses in C-style for loops
+- Range iteration always starts at 0, increments by 1
+- Loops respect indentation-based block structure
+- Early returns from loops work correctly
+
+### ❌ Not Included
+- `break` and `continue` statements
+- `do-while` loops
+- `repeat` loops
+- `range(start, end)` or `range(start, end, step)`
+- Boolean type
+- Implicit variables in range loops
+
+---
+
+## 🎯 v0.5 — Control Flow & Boolean Logic
 
 **Release focus:** Decision making, comparisons, and logical execution
 
@@ -32,14 +58,12 @@ Each version adds concepts gradually, without hiding behavior.
 - Clear runtime errors with exact line numbers
 
 ### ❌ Not Included
-- Loops (`for`, `while`)
+- Loops
 - Boolean literals (`true`, `false`)
-- Multiple arguments in `print`
-- `print()` function syntax
 
 ---
 
-## 🧠 v0.4 — Execution Safety & Errors
+## 🧠 v0.4 — Functions & Local Scope
 
 **Release focus:** Making execution predictable and safe
 
@@ -51,15 +75,19 @@ Each version adds concepts gradually, without hiding behavior.
 - Error on missing `return` in functions
 - Error on `return` outside function
 - Unmatched parentheses detection
+- Call stack implementation
+- Local variable scope isolation
+- Function parameter binding
 
 ### 🔒 Guarantees
 - No silent failures
 - No undefined behavior
 - Program stops immediately on error
+- Local variables cannot shadow global variables
 
 ---
 
-## 🧩 v0.3 — Functions & Scope
+## 🧩 v0.3 — Functions & Structure
 
 **Release focus:** Program structure and execution boundaries
 
@@ -69,6 +97,7 @@ Each version adds concepts gradually, without hiding behavior.
 - Numeric return values
 - Call stack with isolated local scopes
 - Global vs local variable separation
+- Variable type checking for explicit types
 
 ### 🔒 Rules
 - Each function call gets a fresh local scope
@@ -78,11 +107,10 @@ Each version adds concepts gradually, without hiding behavior.
 ### ❌ Not Included
 - Closures
 - Recursion optimizations
-- Accessing globals without passing parameters
 
 ---
 
-## 🧮 v0.2 — Variables & Expressions
+## 🧮 v0.2 — Expressions & Variables
 
 **Release focus:** Data and computation
 
@@ -94,10 +122,41 @@ Each version adds concepts gradually, without hiding behavior.
   - `+`, `-`, `*`, `/`
 - Operator precedence
 - Parentheses in arithmetic expressions
+- Basic error reporting
 
 ### ❌ Not Included
 - Modulus (`%`)
 - Floor division (`//`)
+- Type system
+
+---
+
+## 🌱 v0.1 — Core Language
+
+**Release focus:** The absolute minimum to execute code
+
+### ✨ Added
+- Variable assignment: `x = value`
+- Print statement: `print x`
+- Indentation-based structure
+- Sequential execution
+- String literals with double quotes
+- Numeric literals (integers and decimals)
+- Line-by-line interpretation
+- Comment support with `#`
+
+### 🔒 Guarantees
+- Code executes line by line, top to bottom
+- Variables persist across lines
+- Errors stop execution immediately
+
+---
+
+## 📋 Legend
+
+- **✨ Added** — New features introduced
+- **🔒 Rules & Guarantees** — Design commitments and semantic rules
+- **❌ Not Included** — Intentionally excluded features
 - Exponentiation (`**`)
 - String arithmetic
 

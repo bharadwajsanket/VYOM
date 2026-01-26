@@ -1,6 +1,6 @@
 🌌 Vyom — Minimal Learning-First Programming Language
 
-This document describes Vyom v0.5 behavior only.
+This document describes Vyom v0.6 behavior.
 
 <p align="center">
   <strong>Created and maintained by Sanket Bharadwaj</strong>
@@ -10,11 +10,10 @@ This document describes Vyom v0.5 behavior only.
 
 ⸻
 
-Vyom is a small, indentation-based scripting language written in C, designed to
-teach how programming languages actually work.
+Vyom is a small, indentation-based scripting language written in C.
 
-Vyom is not built to compete with Python or JavaScript.
-It exists to understand them — through clarity, explicit behavior, and visible execution.
+Vyom is designed for clarity: every line executes exactly as written,
+with no hidden behavior or magic.
 
 “If the code can be followed line by line, the design is correct.”
 
@@ -22,14 +21,14 @@ It exists to understand them — through clarity, explicit behavior, and visible
 
 🚀 Current Version
 
-Vyom v0.5 — Control Flow & Boolean Logic ⭐
+Vyom v0.6 — Loops & Iteration ⭐
 
-New in v0.5
-	•	✅ Control flow: if / elif / else with nested support
-	•	✅ Comparisons: == != < > <= >=
-	•	✅ Logical operators: and or not with short-circuit evaluation
-	•	✅ Parenthesized expressions: (a == b) and (c > d)
-	•	✅ Numeric truth model: 0 is false, non-zero is true
+New in v0.6
+	•	✅ While loops: while (condition):
+	•	✅ C-style for loops: for (init; condition; step):
+	•	✅ Range-based loops: for i in range(n):
+	•	✅ Loop nesting and proper return handling
+	•	✅ All previous features from v0.5 (control flow, logic)
 
 ⚠️ Vyom has NO boolean type.
 Use numbers explicitly:
@@ -47,6 +46,9 @@ Arithmetic (numbers only)	x + y * 2
 Comparisons	x > 10
 Logic	a and b or not c
 Conditionals	if x > 0:
+While Loop	while (i < 5):
+For Loop (C-style)	for (i = 0; i < 5; i = i + 1):
+For Loop (Range)	for i in range(5):
 Return values	return a + b
 Local scope	Function-local variables
 Nested calls	add(square(2), 5)
@@ -91,12 +93,12 @@ vyom --version
 
 Expected:
 
-Vyom v0.5 (control flow, comparisons, logical ops)
+Vyom v0.6 (loops, iteration, while, for)
 
 
 ⸻
 
-🧩 Installer & Uninstaller (v0.5)
+🧩 Installer & Uninstaller (v0.6)
 
 install.bat
 	•	Installs Vyom to C:\Vyom

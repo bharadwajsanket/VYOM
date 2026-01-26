@@ -1,8 +1,7 @@
 # =========================================
-# Vyom v0.5 — main.vy
+# Vyom v0.6 — main.vy
 # Official Progressive Demo
-# Control Flow + Comparisons
-# NO SHADOWING VERSION
+# Loops & Iteration
 # =========================================
 
 # 1️⃣ Dynamic variables
@@ -98,6 +97,73 @@ def classify(n):
         return 0
 
 print classify(10)
+
+
+# 1️⃣2️⃣ While loop — count down
+i = 5
+while (i > 0):
+    print i
+    i = i - 1
+
+
+# 1️⃣3️⃣ C-style for loop — sum
+total = 0
+for (j = 1; j <= 5; j = j + 1):
+    total = total + j
+print total
+
+
+# 1️⃣4️⃣ Range-based for loop — simple iteration
+for k in range(3):
+    print k
+
+
+# 1️⃣5️⃣ Nested loops
+for outer in range(2):
+    for inner in range(3):
+        print outer * 3 + inner
+
+
+# 1️⃣6️⃣ Conditional inside loop
+for num in range(10):
+    if num == 5:
+        print num
+
+
+# 1️⃣7️⃣ Loop inside function
+def sum_range(n):
+    result = 0
+    for (idx = 1; idx <= n; idx = idx + 1):
+        result = result + idx
+    return result
+
+print sum_range(10)
+
+
+# 1️⃣8️⃣ Factorial using loop
+def factorial(n):
+    product = 1
+    for (i = 1; i <= n; i = i + 1):
+        product = product * i
+    return product
+
+print factorial(5)
+
+
+# 1️⃣9️⃣ Fibonacci using while loop
+def fibonacci(n):
+    a = 0
+    b = 1
+    count = 0
+    while (count < n):
+        temp = a + b
+        a = b
+        b = temp
+        count = count + 1
+    return a
+
+print fibonacci(8)
+
 print classify(-5)
 print classify(0)
 

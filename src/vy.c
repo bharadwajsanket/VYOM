@@ -13,7 +13,7 @@
 #define MAX_FUNCS 128
 #define MAX_CALL_DEPTH 64
 #define MAX_ARGS  8
-#define VYOM_VERSION "Vyom v0.5 (control flow, comparisons, logical ops)"
+#define VYOM_VERSION "Vyom v0.6 (loops, iteration, while, for)"
 
 // ================= TYPES =================
 
@@ -526,6 +526,327 @@ double eval_condition(const char *s) {
 
 // ================= CONTROL FLOW EXECUTION =================
 
+// Execute while loop starting at index i
+void exec_while_loop(int i) {
+    int base_indent = program[i].indent;
+    
+    // Parse while condition
+    char buf[MAX_LINE];
+    strcpy(buf, program[i].text);
+    char *stmt = trim(buf);
+    
+    if (strncmp(stmt, "while", 5) != 0)
+        error("expected while statement", NULL);
+    
+    char *cond_start = stmt + 5;
+    while (*cond_start == ' ' || *cond_start == '\t') cond_start++;
+    
+    if (*cond_start != '(')
+        error("while requires parentheses around condition", NULL);
+    
+    char *cond_end = strchr(cond_start, ')');
+    if (!cond_end)
+        error("unmatched parentheses in while condition", NULL);
+    
+    char *colon = cond_end + 1;
+    while (*colon == ' ' || *colon == '\t') colon++;
+    
+    if (*colon != ':')
+        error("missing colon after while condition", NULL);
+    
+    // Extract condition
+    char condition[MAX_LINE];
+    strncpy(condition, cond_start + 1, cond_end - cond_start - 1);
+    condition[cond_end - cond_start - 1] = 0;
+    
+    // Find block boundaries
+    int block_start = i + 1;
+    int block_end = find_block_end(i);
+    
+    // Execute loop
+    while (eval_condition(condition) != 0) {
+        int j = block_start;
+        while (j < block_end) {
+            char tmp[MAX_LINE];
+            strcpy(tmp, program[j].text);
+            char *s = trim(tmp);
+            
+            // Stop at same-level control flow
+            if (program[j].indent == base_indent &&
+                (!strncmp(s, "if", 2) || !strncmp(s, "while", 5) || 
+                 !strncmp(s, "for", 3) || !strncmp(s, "def", 3))) {
+                break;
+            }
+            
+            current_line = program[j].line_num;
+            
+            // Handle if/elif/else blocks - skip entire block after execution
+            if (!strncmp(s, "if", 2) && (s[2] == ' ' || s[2] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            // Handle while loops - skip entire block after execution
+            if (!strncmp(s, "while", 5) && (s[5] == ' ' || s[5] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            // Handle for loops - skip entire block after execution
+            if (!strncmp(s, "for", 3) && (s[3] == ' ' || s[3] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            exec_statement(s);
+            if (did_return) return;
+            j++;
+        }
+    }
+}
+
+// Execute C-style for loop starting at index i
+void exec_for_loop(int i) {
+    int base_indent = program[i].indent;
+    
+    // Parse for statement
+    char buf[MAX_LINE];
+    strcpy(buf, program[i].text);
+    char *stmt = trim(buf);
+    
+    if (strncmp(stmt, "for", 3) != 0)
+        error("expected for statement", NULL);
+    
+    char *paren_start = stmt + 3;
+    while (*paren_start == ' ' || *paren_start == '\t') paren_start++;
+    
+    if (*paren_start != '(')
+        error("for requires parentheses", NULL);
+    
+    char *paren_end = strrchr(paren_start, ')');
+    if (!paren_end)
+        error("unmatched parentheses in for loop", NULL);
+    
+    // Find colon after closing paren
+    char *colon = paren_end + 1;
+    while (*colon == ' ' || *colon == '\t') colon++;
+    if (*colon != ':')
+        error("missing colon after for loop", NULL);
+    
+    // Extract for clause (init; condition; step)
+    char for_clause[MAX_LINE];
+    strncpy(for_clause, paren_start + 1, paren_end - paren_start - 1);
+    for_clause[paren_end - paren_start - 1] = 0;
+    trim(for_clause);
+    
+    // Split by semicolons
+    char *sem1 = strchr(for_clause, ';');
+    if (!sem1) error("for loop requires semicolons", NULL);
+    *sem1 = 0;
+    
+    char *sem2 = strchr(sem1 + 1, ';');
+    if (!sem2) error("for loop requires two semicolons", NULL);
+    *sem2 = 0;
+    
+    char init_buf[MAX_LINE], cond_buf[MAX_LINE], step_buf[MAX_LINE];
+    strcpy(init_buf, trim(for_clause));
+    strcpy(cond_buf, trim(sem1 + 1));
+    strcpy(step_buf, trim(sem2 + 1));
+    
+    char *init = init_buf;
+    char *condition = cond_buf;
+    char *step = step_buf;
+    
+    // Execute initialization
+    if (*init != '\0') {
+        current_line = program[i].line_num;
+        exec_statement(init);
+        if (did_return) return;
+    }
+    
+    // Find block boundaries
+    int block_start = i + 1;
+    int block_end = find_block_end(i);
+    
+    // Execute loop
+    while (*condition == '\0' || eval_condition(condition) != 0) {
+        int j = block_start;
+        while (j < block_end) {
+            char tmp[MAX_LINE];
+            strcpy(tmp, program[j].text);
+            char *s = trim(tmp);
+            
+            // Stop at same-level control flow
+            if (program[j].indent == base_indent &&
+                (!strncmp(s, "if", 2) || !strncmp(s, "while", 5) || 
+                 !strncmp(s, "for", 3) || !strncmp(s, "def", 3))) {
+                break;
+            }
+            
+            current_line = program[j].line_num;
+            
+            // Handle if/elif/else blocks - skip entire block after execution
+            if (!strncmp(s, "if", 2) && (s[2] == ' ' || s[2] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            // Handle while loops - skip entire block after execution
+            if (!strncmp(s, "while", 5) && (s[5] == ' ' || s[5] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            // Handle for loops - skip entire block after execution
+            if (!strncmp(s, "for", 3) && (s[3] == ' ' || s[3] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            exec_statement(s);
+            if (did_return) return;
+            j++;
+        }
+        
+        // Execute step
+        if (*step != '\0') {
+            current_line = program[i].line_num;
+            char step_copy[MAX_LINE];
+            strcpy(step_copy, step);
+            exec_statement(step_copy);
+            if (did_return) return;
+        }
+    }
+}
+
+// Execute for-in-range loop starting at index i
+void exec_for_in_range_loop(int i) {
+    int base_indent = program[i].indent;
+    
+    // Parse for statement
+    char buf[MAX_LINE];
+    strcpy(buf, program[i].text);
+    char *stmt = trim(buf);
+    
+    if (strncmp(stmt, "for", 3) != 0)
+        error("expected for statement", NULL);
+    
+    char *after_for = stmt + 3;
+    while (*after_for == ' ' || *after_for == '\t') after_for++;
+    
+    // Find 'in' keyword
+    char *in_keyword = strstr(after_for, " in ");
+    if (!in_keyword) in_keyword = strstr(after_for, "\tin");
+    if (!in_keyword) error("for-in loop requires 'in' keyword", NULL);
+    
+    // Extract loop variable
+    char loop_var[64];
+    strncpy(loop_var, after_for, in_keyword - after_for);
+    loop_var[in_keyword - after_for] = 0;
+    trim(loop_var);
+    
+    // Find range() call
+    char *range_start = strstr(in_keyword, "range");
+    if (!range_start) error("for-in requires range()", NULL);
+    
+    char *paren = strchr(range_start, '(');
+    if (!paren) error("range requires parentheses", NULL);
+    
+    char *range_end = strchr(paren, ')');
+    if (!range_end) error("unmatched parentheses in range()", NULL);
+    
+    // Extract range argument
+    char range_arg[MAX_LINE];
+    strncpy(range_arg, paren + 1, range_end - paren - 1);
+    range_arg[range_end - paren - 1] = 0;
+    trim(range_arg);
+    
+    if (*range_arg == '\0')
+        error("range() requires an argument", NULL);
+    
+    // Find colon
+    char *colon = range_end + 1;
+    while (*colon == ' ' || *colon == '\t') colon++;
+    if (*colon != ':')
+        error("missing colon after for-in loop", NULL);
+    
+    // Evaluate range argument
+    double n = eval_condition(range_arg);
+    if (n < 0) n = 0;  // Treat negative as empty range
+    
+    // Find block boundaries
+    int block_start = i + 1;
+    int block_end = find_block_end(i);
+    
+    // Execute loop
+    for (double idx = 0; idx < n; idx += 1) {
+        // Set loop variable
+        Var v = {0};
+        strcpy(v.name, loop_var);
+        v.type = V_NUM;
+        v.num = idx;
+        set_var(v);
+        
+        if (did_return) return;
+        
+        int j = block_start;
+        while (j < block_end) {
+            char tmp[MAX_LINE];
+            strcpy(tmp, program[j].text);
+            char *s = trim(tmp);
+            
+            // Stop at same-level control flow
+            if (program[j].indent == base_indent &&
+                (!strncmp(s, "if", 2) || !strncmp(s, "while", 5) || 
+                 !strncmp(s, "for", 3) || !strncmp(s, "def", 3))) {
+                break;
+            }
+            
+            current_line = program[j].line_num;
+            
+            // Handle if/elif/else blocks - skip entire block after execution
+            if (!strncmp(s, "if", 2) && (s[2] == ' ' || s[2] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            // Handle while loops - skip entire block after execution
+            if (!strncmp(s, "while", 5) && (s[5] == ' ' || s[5] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            // Handle for loops - skip entire block after execution
+            if (!strncmp(s, "for", 3) && (s[3] == ' ' || s[3] == '\t')) {
+                exec_statement(s);
+                if (did_return) return;
+                j = find_block_end(j);
+                continue;
+            }
+            
+            exec_statement(s);
+            if (did_return) return;
+            j++;
+        }
+    }
+}
+
 // Execute if/elif/else control flow starting at index i
 void exec_if_block(int i) {
     int base_indent = program[i].indent;
@@ -664,6 +985,40 @@ void exec_statement(char *t) {
 
     // Skip elif/else keywords (handled by exec_if_block)
     if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4)) {
+        return;
+    }
+
+    // Handle 'while' loop
+    if (!strncmp(t, "while", 5) && (t[5] == ' ' || t[5] == '\t')) {
+        // Find current position in program
+        for (int i = 0; i < line_count; i++) {
+            if (program[i].line_num == current_line) {
+                exec_while_loop(i);
+                return;
+            }
+        }
+        error("while statement not found in program", NULL);
+        return;
+    }
+
+    // Handle 'for' loop (both C-style and for-in-range)
+    if (!strncmp(t, "for", 3) && (t[3] == ' ' || t[3] == '\t')) {
+        // Distinguish between C-style and for-in-range
+        char *in_keyword = strstr(t, " in ");
+        if (!in_keyword) in_keyword = strstr(t, "\tin");
+        
+        // Find current position in program
+        for (int i = 0; i < line_count; i++) {
+            if (program[i].line_num == current_line) {
+                if (in_keyword) {
+                    exec_for_in_range_loop(i);
+                } else {
+                    exec_for_loop(i);
+                }
+                return;
+            }
+        }
+        error("for statement not found in program", NULL);
         return;
     }
 
@@ -876,6 +1231,20 @@ int main(int argc, char **argv) {
         
         // Execute if/elif/else as compound statement, then skip entire block
         if (!strncmp(stmt, "if", 2) && (stmt[2] == ' ' || stmt[2] == '\t')) {
+            exec_statement(stmt);
+            i = find_block_end(i) - 1;
+            continue;
+        }
+        
+        // Execute while loop as compound statement, then skip entire block
+        if (!strncmp(stmt, "while", 5) && (stmt[5] == ' ' || stmt[5] == '\t')) {
+            exec_statement(stmt);
+            i = find_block_end(i) - 1;
+            continue;
+        }
+        
+        // Execute for loop as compound statement, then skip entire block
+        if (!strncmp(stmt, "for", 3) && (stmt[3] == ' ' || stmt[3] == '\t')) {
             exec_statement(stmt);
             i = find_block_end(i) - 1;
             continue;

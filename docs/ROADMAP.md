@@ -7,37 +7,40 @@ This roadmap reflects **actual shipped versions and committed direction**, not h
 
 ---
 
-## ✅ v0.2 — Stability Core (Released)
+## ✅ v0.1 — Core Language (Released)
 
-**Focus:** syntax cleanup, predictability, and reliability
+**Focus:** the absolute minimum to execute code
 
-- `=` assignment (removed `set`)
-- case-sensitive variables
-- string concatenation
-- arithmetic expressions (`+ - * /`)
-- `type(x)`
-- `exit`
-- human-friendly error messages
-- indentation-based blocks
+- Variable assignment
+- Print statement
+- Indentation-based blocks
+- Sequential execution
 
 ---
 
-## ✅ v0.3 — Types & Structure (Released)
+## ✅ v0.2 — Expressions (Released)
 
-**Focus:** structure without execution complexity
+**Focus:** Data and computation
 
-- optional explicit typed variables  
-  `int`, `double`, `string`
-- type locking for explicit variables
-- dynamic (untyped) variables still supported
-- function definitions using `def`
-- functions parsed & stored (not executed)
-
-> v0.3 introduced structure, not behavior.
+- Numeric and string literals
+- Variable reassignment
+- Arithmetic operators: `+ - * /`
+- Operator precedence
+- Parentheses in expressions
 
 ---
 
-## ⭐ v0.4 — Functions Complete (Released)
+## ✅ v0.3 — Structure (Released)
+
+**Focus:** function definitions and parsing
+
+- Function definitions using `def`
+- Parsing parameters and returns
+- Type annotation support (optional)
+
+---
+
+## ✅ v0.4 — Execution (Released)
 
 **Focus:** completing the procedural execution model
 
@@ -69,81 +72,69 @@ This roadmap reflects **actual shipped versions and committed direction**, not h
 
 ---
 
-## 🎯 v0.5 — Control Flow (Planned)
+## ✅ v0.5 — Control Flow (Released)
 
-**Focus:** readable decision-making without hidden behavior
+**Focus:** readable decision-making
 
-### Included
-- comparison operators  
-  `>  <  >=  <=  ==  !=`
-- numeric truth values  
-  `0 = false`, `non-zero = true`
-- conditionals:
-  ```vy
-  if condition:
-      ...
-  elif condition:
-      ...
-  else:
-      ...
-  ```
-- logical operators:  
-  `and`, `or`, `not`
-- short-circuit evaluation
-
-### Explicitly NOT included
-- ❌ boolean type (`True` / `False`)
-- ❌ ternary operator
-- ❌ switch / match
-- ❌ implicit truthiness rules beyond numbers
+- Comparison operators: `== != < > <= >=`
+- Logical operators: `and`, `or`, `not`
+- Short-circuit evaluation
+- `if / elif / else` with nesting
+- Numeric truth values: `0 = false`, non-zero = true
+- Parenthesized expressions
 
 ---
 
-## 🔁 v0.6 — Iteration (Planned)
+## ✅ v0.6 — Loops & Iteration (Released)
 
 **Focus:** controlled repetition
 
-- loop construct (design TBD)
-- explicit execution rules
-- no hidden iterator magic
+- `while (condition):` loops
+- `for (init; condition; step):` C-style loops
+- `for i in range(n):` range-based loops
+- Loop nesting
+- Proper return handling in loops
 
 ---
 
-## 📦 v0.7 — Data Structures (Planned)
+## 📦 v0.7 — Collections (Planned)
 
 **Focus:** minimal but practical containers
 
-- lists / arrays
-- indexing (`x[0]`)
-- length helpers
+- Lists / arrays
+- Indexing (`x[0]`)
+- Iteration with `for` over lists
+- List length queries
 
 ---
 
-## 💻 v0.8 — REPL Mode (Optional)
+## 📝 v0.8 — String Operations (Planned)
 
-- interactive shell
-- step-by-step execution
-- debugging-friendly output
+**Focus:** basic string manipulation
 
----
-
-## 🧩 v0.9 — Usability & Polish (Optional)
-
-- error message refinement
-- tooling improvements
-- performance profiling hooks
+- String indexing (`s[0]`)
+- String concatenation (refined)
+- Built-in string functions
 
 ---
 
-## 🚀 v1.0 — Core Language Frozen (Goal)
+## 💾 v0.9 — File I/O (Planned)
+
+**Focus:** reading and writing files
+
+- File reading
+- File writing
+- Basic file operations
+
+---
+
+## 🚀 v1.0 — Stable Core (Goal)
 
 **Definition of v1.0:**
-- stable syntax
-- stable semantics
-- complete procedural language
-- no breaking changes going forward
-
-> v1.0 is not about features — it is about **trust**.
+- Stable syntax (no breaking changes)
+- Stable semantics
+- Complete procedural language
+- Production-ready
 
 ---
 

@@ -40,40 +40,43 @@ Every line of code executes exactly as written. The interpreter is transparent, 
 
 ## 🚀 Current Version
 
-**Vyom v0.5 — Control Flow & Boolean Logic** ⭐
+**Vyom v0.6 — Loops & Iteration** ⭐
 
-This release introduces **structured decision-making** with full boolean logic support:
+This release introduces **controlled repetition** with multiple loop constructs:
 
-### New in v0.5
-- ✅ **Control flow**: `if / elif / else` with nested support
-- ✅ **Comparisons**: `==` `!=` `<` `>` `<=` `>=`
-- ✅ **Logical operators**: `and` `or` `not` with short-circuit evaluation
-- ✅ **Parenthesized expressions**: `(a == b) and (c > d)`
-- ✅ **Numeric truth model**: `0` is false, non-zero is true
+### New in v0.6
+- ✅ **While loops**: `while (condition):`
+- ✅ **C-style for loops**: `for (init; condition; step):`
+- ✅ **Range-based for loops**: `for i in range(n):`
+- ✅ **Loop nesting**: loops inside functions, conditionals, and other loops
+- ✅ **Return from loops**: `return` inside a loop exits the function
 
-### What Vyom v0.5 Can Do
+### What Vyom v0.6 Can Do
 ```vy
-# Variables and functions
-x = 10
-y = 20
+# Count down with while
+i = 5
+while (i > 0):
+    print i
+    i = i - 1
 
-def classify(n):
-    if n > 0:
-        return 1
-    elif n < 0:
-        return -1
-    else:
-        return 0
+# Sum numbers with for loop
+sum = 0
+for (i = 0; i < 10; i = i + 1):
+    sum = sum + i
+print sum
 
-# Boolean logic
-if x < y and y > 15:
-    print "Condition met"
-else:
-    print "Condition not met"
+# Iterate with range
+for j in range(3):
+    print j
 
-# Function calls
-result = classify(x)
-print result
+# Factorial with loops
+def factorial(n):
+    result = 1
+    for (i = 1; i <= n; i = i + 1):
+        result = result * i
+    return result
+
+print factorial(5)
 ```
 
 ---
@@ -122,7 +125,7 @@ vyom hello.vy
 
 ## ✨ Features
 
-### ✅ Currently Supported (v0.5)
+### ✅ Currently Supported (v0.6)
 
 | Feature | Syntax | Example |
 |---------|--------|---------|
@@ -135,6 +138,9 @@ vyom hello.vy
 | **Functions** | `def name(params):` | `def add(a, b):` |
 | **Return** | `return value` | `return a + b` |
 | **Conditionals** | `if / elif / else` | `if x > 0:` |
+| **While Loop** | `while (condition):` | `while (i < 5):` |
+| **For Loop** | `for (init; cond; step):` | `for (i = 0; i < 5; i = i + 1):` |
+| **Range Loop** | `for i in range(n):` | `for i in range(10):` |
 | **Print** | `print expression` | `print x` |
 | **Comments** | `#` | `# comment` |
 
@@ -149,6 +155,28 @@ vyom hello.vy
 ---
 
 ## 📚 Examples
+
+### Loops and Iteration
+```vy
+# While loop
+count = 0
+while (count < 3):
+    print count
+    count = count + 1
+
+# C-style for loop
+for (i = 0; i < 5; i = i + 1):
+    print i
+
+# Range-based for loop
+for j in range(3):
+    print j
+
+# Nested loops
+for i in range(2):
+    for j in range(3):
+        print i * 3 + j
+```
 
 ### Functions with Logic
 ```vy
@@ -198,6 +226,32 @@ if (x < 5 or x > 8) and y > 10:
 def factorial(n):
     if n <= 1:
         return 1
+    else:
+        return n * factorial(n - 1)
+
+print factorial(5)  # 120
+```
+
+### Computing with Loops
+```vy
+# Sum
+total = 0
+for (i = 1; i <= 5; i = i + 1):
+    total = total + i
+print total
+
+# Fibonacci
+def fib(n):
+    a = 0
+    b = 1
+    for (i = 0; i < n; i = i + 1):
+        temp = a + b
+        a = b
+        b = temp
+    return a
+
+print fib(10)
+```
     else:
         return n * factorial(n - 1)
 
@@ -255,34 +309,28 @@ The language evolves incrementally. Capabilities expand version by version. Corr
 
 Vyom grows incrementally. Future versions will expand capabilities while maintaining clarity and predictability.
 
-### v0.6 — Loops & Iteration
-- `while` loops
-- `for` loops with range iteration
-- `break` and `continue`
-- Loop control flow
-
 ### v0.7 — Collections
 - Lists/arrays
 - Indexing `list[0]`
 - Basic list operations
-- String indexing
 
 ### v0.8 — String Methods
 - String manipulation
 - Built-in string functions
-- String formatting
 
-### Beyond
+### v0.9 — Standard Library
 - File I/O
-- Module system
-- Standard library
-- Error handling (`try/catch`)
+- More utilities
+
+### v1.0 — Stable Core
+- Frozen syntax and semantics
+- Production-ready language
 
 ---
 
 ## 📊 Status
 
-| Feature | v0.5 | Planned |
+| Feature | v0.6 | Planned |
 |---------|------|----------|
 | Variables | ✅ | ✅ |
 | Functions | ✅ | ✅ |
@@ -290,8 +338,10 @@ Vyom grows incrementally. Future versions will expand capabilities while maintai
 | Comparisons | ✅ | ✅ |
 | Logic (and/or/not) | ✅ | ✅ |
 | if/elif/else | ✅ | ✅ |
-| Loops | ❌ | ✅ |
-| Lists | ❌ | ❌ |
+| While Loop | ✅ | ✅ |
+| For Loop | ✅ | ✅ |
+| Range Loop | ✅ | ✅ |
+| Lists | ❌ | ✅ |
 
 ---
 
@@ -368,7 +418,7 @@ Found a bug? Please report it!
 ### Understanding Vyom
 - Start with [`examples/main.vy`](examples/main.vy) — progressive demo
 - Read the [syntax reference](docs/syntax.md)
-- Explore the [C source code](src/vy.c) — it's only ~700 lines!
+- Explore the [C source code](src/vy.c) — it's only ~1100 lines!
 
 ### Understanding Interpreters
 Vyom's source is deliberately simple. Study it to learn:
@@ -376,6 +426,7 @@ Vyom's source is deliberately simple. Study it to learn:
 - How to evaluate expressions
 - How function calls work
 - How control flow is implemented
+- How to execute loops correctly
 - How to report errors clearly
 
 ---
@@ -402,4 +453,4 @@ MIT License — See [LICENSE](LICENSE) file for details.
 
 <p align="center">
   Authored by <b>Sanket Bharadwaj</b>
-</p>
+</p>  
