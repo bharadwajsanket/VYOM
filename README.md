@@ -52,6 +52,7 @@ This release introduces **controlled repetition** with multiple loop constructs:
 - ✅ **Return from loops**: `return` inside a loop exits the function
 
 ### What Vyom v0.6 Can Do
+
 ```vy
 # Count down with while
 i = 5
