@@ -97,7 +97,17 @@ Verify:
 ```bash
 vyom --version
 ```
+⚠️ Windows Security Notice
 
+When running `install.bat`, Windows may show:
+"Smart App Control blocked this file"
+
+This is expected for unsigned scripts.
+
+To proceed:
+- Right click `install.bat`
+- Properties → Check "Unblock"
+- Run again (preferably as Administrator)
 ---
 
 ###  macOS / 🐧 Linux

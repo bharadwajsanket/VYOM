@@ -1,66 +1,145 @@
-# =========================================
-# Vyom v0.2 — test.vy
-# Internal test suite (NOT for users)
-# This file is used to validate:
-# - error messages
-# - warnings
-# - edge cases
-# =========================================
+# =====================================================
+# Vyom v0.7 — test.vy
+# Internal Validation Suite (NOT FOR USERS)
+#
+# Purpose:
+# - Validate error messages
+# - Validate strict rules
+# - Break the interpreter intentionally
+#
+# This file is NOT meant to run fully.
+# Execution should STOP on first error.
+# =====================================================
 
 
-# ---------- UNDEFINED VARIABLES ----------
-print unknown
-print type(not_defined)
+# -----------------------------------------------------
+# ❌ Undefined variables
+# -----------------------------------------------------
+print(unknown)
+print(type(not_defined))
 
 
-# ---------- INVALID VARIABLE NAMES ----------
+# -----------------------------------------------------
+# ❌ Invalid variable names
+# -----------------------------------------------------
 1abc = 10
 a-b = 5
 
 
-# ---------- MISSING RHS ----------
+# -----------------------------------------------------
+# ❌ Missing RHS in assignment
+# -----------------------------------------------------
 bad1 =
 bad2 =
 
 
-# ---------- EXPRESSIONS ----------
+# -----------------------------------------------------
+# ❌ Division by zero
+# -----------------------------------------------------
 x = 10
 y = 0
+z = x / y
+print(z)
 
-z = x / y        # division by zero (should not crash)
-print z
 
-
-# ---------- INVALID OPERATORS ----------
+# -----------------------------------------------------
+# ❌ Invalid operator
+# -----------------------------------------------------
 a = x $ y
 
 
-# ---------- CONDITIONS ----------
+# -----------------------------------------------------
+# ❌ Invalid comparisons (type mismatch)
+# -----------------------------------------------------
 msg = "hello"
 
 if msg > 5:
-    print "invalid comparison"
+    print("invalid comparison")
 
 
-# ---------- REPEAT ----------
+# -----------------------------------------------------
+# ❌ Invalid control flow keywords
+# -----------------------------------------------------
 repeat -2:
-    print "should not run"
+    print("should not run")
 
 
-# ---------- EXIT ----------
-print "before exit"
-exit
-print "this should not print"
+# -----------------------------------------------------
+# ❌ break / continue outside loop
+# -----------------------------------------------------
+break
+continue
 
 
-# ---------- UNKNOWN STATEMENTS ----------
+# -----------------------------------------------------
+# ❌ return outside function
+# -----------------------------------------------------
+return 5
+
+
+# -----------------------------------------------------
+# ❌ print without parentheses (v0.7 strict)
+# -----------------------------------------------------
+print "old syntax"
+
+
+# -----------------------------------------------------
+# ❌ Unterminated string literal
+# -----------------------------------------------------
+print("this string never ends)
+
+
+# -----------------------------------------------------
+# ❌ Unknown / unsupported statements
+# -----------------------------------------------------
 hello world
-foo(bar)
+foo(bar,)
 
 
-# ---------- UNTERMINATED STRING ----------
-print "this string never ends
+# -----------------------------------------------------
+# ❌ Const misuse
+# -----------------------------------------------------
+const PI = 3.14
+PI = 3.0
 
 
-# ---------- END ----------
-print "test completed"
+# -----------------------------------------------------
+# ❌ Type reassignment
+# -----------------------------------------------------
+int a = 10
+a = "string"
+
+
+# -----------------------------------------------------
+# ❌ Chained assignment (not allowed)
+# -----------------------------------------------------
+x = y = 10
+
+
+# -----------------------------------------------------
+# ❌ Chained comparison (not allowed)
+# -----------------------------------------------------
+if 1 < 2 < 3:
+    print("nope")
+
+
+# -----------------------------------------------------
+# ❌ Missing colon
+# -----------------------------------------------------
+if x == 10
+    print("missing colon")
+
+
+# -----------------------------------------------------
+# ❌ Function errors
+# -----------------------------------------------------
+def bad_func(a, b):
+    a = a + b
+
+bad_func(1)        # wrong arg count
+
+
+# -----------------------------------------------------
+# ❌ End marker (should never reach)
+# -----------------------------------------------------
+print("test completed")
