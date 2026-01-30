@@ -1,49 +1,55 @@
-# 🌌 Vyom — The Journey (0.1 → 0.6)
+# 🌌 Vyom — A Story (v0.1 → v0.7)
 
 This is not documentation.  
-This is memory.
+This is not a changelog.  
 
-Vyom did not start as a programming language.  
-It started as a thought:
+This is a **story**.
+
+Vyom didn’t start as a programming language.  
+It started as a feeling.
 
 > “Easy likhne me ho,  
 > par andar se real ho.”
 
 No buzzwords.  
-No hype.  
-No comparison games.
+No trends.  
+No race.
 
 Bas ek file.  
-Ek idea.  
+Ek editor.  
 Aur bahut saari galtiyaan.
 
 ---
 
-## 🌱 v0.1 — The First Line
+## 🌱 v0.1 — Jab Sirf Ek Line Thi
 
-Everything started with one line:
+Sab kuch shuru hua ek line se:
 
 ```
 a = 10
 ```
 
 No types.  
-No rules.  
-No future plan.
+No scope.  
+No rules.
 
-Sirf ek sawaal tha:
+Bas ek sawaal:
 
-**“Kya main kuch store kar sakta hoon?”**
+**“Kya main kuch yaad rakh sakta hoon?”**
 
-Aur jab us value ko print kiya…  
-wo feeling fake nahi thi.
+Aur jab us value ko print kiya —  
+screen pe number aaya.
 
-Us moment pe Vyom language nahi tha.  
-Wo **proof** tha — ki kuch ban sakta hai.
+Wo moment fake nahi tha.  
+Wo moment *real* tha.
+
+Vyom language nahi tha.  
+Vyom proof tha —  
+ki haan, kuch ban sakta hai.
 
 ---
 
-## 🧱 v0.2 — Things Started Breaking (And That Was Good)
+## 🧱 v0.2 — Jab Cheezein Tootni Shuru Hui
 
 Phir aaya:
 
@@ -51,43 +57,45 @@ Phir aaya:
 print a
 ```
 
-Indentation matter karne laga.  
+Indentation matter karne lagi.  
 Whitespace matter karne laga.  
-Errors aane lage.
+Errors dikhne lage.
 
 Kabhi code chala.  
 Kabhi crash hua.
 
-Aur ye acha tha.
+Aur ye achha tha.
 
-Kyuki ab Vyom **jhoot nahi bol raha tha**.  
-Agar kuch galat hai, to seedha bol raha tha.
+Kyuki ab Vyom jhoot nahi bol raha tha.  
+Agar kuch galat hai —  
+to seedha bol raha tha.
 
 No silent failure.  
 No guessing.
 
 ---
 
-## 🧩 v0.3 — Structure Without Confidence
+## 🧩 v0.3 — Structure Aaya, Bharosa Nahi
 
-Is phase me Vyom thoda serious banna chahta tha.
+Is stage pe Vyom thoda serious banna chahta tha.
 
+Types aaye:
 ```
 int a = 10
-a = 1
 ```
 
-Types optional the.  
-Type locking exist karta tha.
+Rules bane.  
+Constraints aaye.
 
 Par execution…  
-abhi khud pe bharosa nahi karta tha.
+abhi khud pe confident nahi tha.
 
 Functions likhe ja sakte the,  
-par chal nahi sakte the.
+par reliably chal nahi rahe the.
 
-Jaise plans — jo paper pe perfect ho,  
-par real life me test nahi hue ho.
+Jaise plans —  
+jo notebook me perfect ho,  
+par real life me test nahi hue.
 
 Yahin ek baat clear hui:
 
@@ -96,64 +104,52 @@ Yahin ek baat clear hui:
 
 ---
 
-## 🔁 v0.4 — Functions Finally Breathed
+## 🔁 v0.4 — Jab Functions Zinda Hue
 
-Yahin se Vyom zinda hua.
+Yahin se Vyom ne saans li.
 
 Functions sirf syntax nahi rahe.  
-Wo **run** hue.  
-Wo **return** hue.  
-Unka **scope** bana.
+Wo chale.  
+Wo return hue.  
+Unka scope bana.
 
 ```
 def add(a, b):
     return a + b
 ```
 
-Local aur global ka farq clear hua.  
+Local aur global ka farq samajh aaya.  
 Shadowing ko jaan-bujh kar ban kiya gaya.
 
-Is version me bugs aaye:
+Is phase me bugs aaye:
+- stack issues
+- return value confusion
+- scope leaks
 
-- stack related issues  
-- return value confusion  
-- scope leaks  
-
-Par har bug ke baad Vyom aur **strong** hota gaya.
+Par har bug ke baad Vyom thoda aur mature hota gaya.
 
 ---
 
-## ⚖️ v0.5 — Logic, Truth, and Control
+## ⚖️ v0.5 — Sach, Jhoot Aur Faisle
 
-Phir ek simple par dangerous sawaal aaya:
+Phir ek dangerous sawaal aaya:
 
 > “Truth kya hota hai?”
 
 Answer simple rakha gaya:
 
 ```
-0 = false  
-non-zero = true
+0 → false  
+non-zero → true
 ```
 
 No `true`.  
 No `false`.  
-No magic keywords.
+No magic.
 
-Comparisons aaye:
-```
-a < b
-a == b
-```
-
-Logic aaya:
-```
-and
-or
-not
-```
-
-Aur finally control flow:
+Comparisons aaye.  
+Logic aaya.  
+Decision making aayi.
 
 ```
 if
@@ -161,234 +157,103 @@ elif
 else
 ```
 
-Is phase me Vyom **bahut toota**.
+Is phase me Vyom bahut toota.
 
-- `elif` bina `if` ke  
-- empty expressions  
-- blocks do baar execute hona  
-- return inside conditionals  
+Par har crash ke baad  
+ek cheez aur clear hoti gayi:
 
-Par ek bhi issue ignore nahi kiya gaya.
-
-Har problem ko:
-**samjha → reproduce kiya → fix kiya**
-
-Yahin Vyom ne seekha:
-decision kaise lena hai.
+Vyom ko **guess nahi karna**.  
+Vyom ko **seedha bolna** hai.
 
 ---
 
-## 🔄 v0.6 — Loops & Repetition (The Big One)
+## 🔄 v0.6 — Jab Repeat Karna Aaya
 
-Ab tak Vyom ne seekha tha:
+Ab tak Vyom seekh chuka tha:
+- store karna
+- print karna
+- decide karna
 
-- kaise **store** kare (v0.1)
-- kaise **print** kare (v0.2)
-- kaise **define** kare (v0.3-0.4)
-- kaise **decide** kare (v0.5)
+Par ek cheez missing thi:
 
-Ab ek aur zaroori sawaal tha:
+> “Repeat kaise karein?”
 
-> "Kaise **repeat** kare?"
+Kyuki bina loops ke  
+interpreter bas calculator hota hai.
 
-Kyuki jab repeat nahi kar sakte, to ek interpreter bas ek calculator ban jata hai.
+While loops aaye.  
+For loops aaye.  
+Range loops aaye.
 
-Is phase me kaam tha:
-
-**While loops** — simplest idea
-```
-while (i < 5):
-    print i
-    i = i + 1
-```
-
-Condition parentheses me.  
-Colon zaroori.  
-Har iteration pe condition check.
-
-**C-style for loops** — familiar terrain
-```
-for (i = 0; i < 5; i = i + 1):
-    print i
-```
-
-Init, condition, step — familiar formula.  
-Semicolons zaroori.  
-Exact expected.
-
-**For-in-range loops** — sugar for counting
-```
-for i in range(5):
-    print i
-```
-
-Iska matlab: 0 se 4 tak.  
-Bas itna.  
-Clear.
+Aur phir testing aayi.
 
 ---
 
-### The Hard Part (Jab Sab Toota)
+### Jab Sab Toota (Aur Phir Bana)
 
-Phir tha testing.
+Bugs aaye.  
+Serious bugs.
 
-Aur **bugs mile**:
+Loops infinite ho gaye.  
+Conditions ignore hone lagi.
 
-**Bug 1: The Step Corruption**
+Ek bug ne sikhaya:
+- memory ka respect
 
-C-style for loop ka step buffer reuse ho raha tha.  
-Second iteration me step ka value galat tha.
+Ek bug ne sikhaya:
+- block boundaries kitni important hoti hain
 
-Symptoms:
-```
-for (i = 0; i < 5; i = i + 1):
-    print i
-```
-
-Output nahi tha.  
-Infinite loop tha.  
-Ya crash.
-
-Wajah: step pointer ko freed memory point kar raha tha.
-
-**Solution**: Step ko separate buffer me copy karna pada.
+Har bug ko ignore nahi kiya gaya.  
+Har bug ko samjha gaya.  
+Aur phir fix kiya gaya.
 
 ---
 
-**Bug 2: The If-Inside-Loop Mystery**
+## 🌟 Jab Cheezein Finally Click Hui
 
-Ye zyada interesting bug tha.
+Jab saare test pass hue:
 
-```
-i = 0
-while (i < 5):
-    if i == 2:
-        print "TWO"
-    i = i + 1
-```
+- loops inside functions ✓
+- loops inside loops ✓
+- conditions inside loops ✓
+- returns everywhere ✓
 
-Condition evaluate ho raha tha correctly.  
-Par block **always execute** ho raha tha.
+Tab ek feeling aayi:
 
-Yaani:
-- `i == 2` false ho raha tha  
-- Lekin print ho raha tha
-
-Debug output:
-```
-if condition evaluated to 0
-found two
-```
-
-**What was happening**:
-
-Main loop execution me jab `exec_statement("if i == 2:")` call hota tha,  
-wo condition evaluate to 0 kar deta tha.  
-Lekin phir block skip nahi hota tha.
-
-**The Root Cause**:
-
-Loop execution code me block end detection nahi tha.  
-`exec_statement` ke baad `find_block_end()` call nahi ho raha tha.
-
-**The Fix**:
-
-Har nested control structure (if/while/for) ke liye explicit block skipping add kiya.
-
-```c
-if (!strncmp(s, "if", 2) && (s[2] == ' ' || s[2] == '\t')) {
-    exec_statement(s);
-    if (did_return) return;
-    j = find_block_end(j);  // THIS LINE MATTERS
-    continue;
-}
-```
+> Vyom complete nahi hai.  
+> Par Vyom **enough** hai.
 
 ---
 
-### The Moment It Clicked
+## 📖 Ye Sirf Code Nahi Tha
 
-Tab tak **every loop** test kiya:
+v0.6 sirf release nahi tha.  
+Wo ek phase ka closure tha.
 
-- While: ✓ Worked  
-- C-style for: ✓ Worked  
-- Range for: ✓ Worked  
-- Nested loops: ✓ Worked  
-- Conditionals in loops: ✓ Worked  
-- Functions with loops: ✓ Worked  
-
-Aur sab test files:
-
-```
-sum_1_to_5 = 15 ✓
-factorial_5 = 120 ✓
-fibonacci_sequence = correct ✓
-nested_2x3 = perfect ✓
-```
-
-Ye moment tha jab realize hua:
-
-> Vyom ab **complete** nahi hai,  
-> par **sufficient** hai.
-
-Three fundamental loops, nested support, proper scope handling.
+Is journey me bana:
+- discipline
+- patience
+- confidence
+- aur sabse important — honesty
 
 ---
 
-## 📚 What We Actually Built
+## ✨ Aage Kya?
 
-Ye v0.6 release nahi tha sirf.  
-Ye ek **phase completion** tha.
+Vyom ab bhi ban raha hai.  
+Slowly.  
+Deliberately.
 
-**Code Phase**:
-- 3 loop implementations (while, for, for-in-range)
-- Nested loop support with proper block handling
-- 2 critical bugs discovered aur fixed
-- Full testing cycle
+No rush.  
+No pressure.
 
-**Documentation Phase**:
-- README.md updated (loop syntax + examples)
-- CHANGELOG.md rewritten (v0.1 to v0.6 complete history)
-- ROADMAP.md updated (v0.6 released, v0.7+ planned)
-- windows/README.txt updated (feature table)
-- SYNTAX.md updated (full loop reference)
-- examples/main.vy updated (19 progressive examples)
+Bas ek rule:
 
-**The Real Win**:
-
-Har decision properly tested tha.  
-Har edge case handle tha.  
-Har error message clear tha.
+> Jo likha hai, wahi chale.
 
 ---
 
-## 🌟 Final Note
+Vyom ek language nahi.  
+Vyom ek process hai.
 
-Vyom now has:
-
-✓ Variables (dynamic typed)  
-✓ Functions (with scope + return)  
-✓ Comparisons (< > == != >= <=)  
-✓ Logic operators (and, or, not)  
-✓ Control flow (if, elif, else)  
-✓ **Loops** (while, for, for-in-range) ← v0.6  
-
-Kya complete hai?
-
-Nahi.
-
-Kya usable hai?
-
-**Haan.**
-
-Kya story interesting hai?
-
-Ek aur version ke baad pata chalega.
-
----
-
-Vyom **ban raha hai**.  
-Aur ye sab milke **zaroori** tha.
-
-— Sanket  
-*25 January 2026*
+— Sanket
