@@ -1,63 +1,102 @@
-🌌 Vyom — Minimal Learning-First Programming Language
+# 🌌 Vyom — Minimal, Learning‑First Programming Language
 
-This document describes Vyom v0.6 behavior.
+This document describes **Vyom v0.7** behavior (Windows release).
 
-Created and maintained by Sanket Bharadwaj
+Created and maintained by **Sanket Bharadwaj**
 
-Vyom is a small, indentation-based scripting language written in C.
+Vyom is a small, indentation‑based scripting language written in C.
 
-Vyom is designed for clarity: every line executes exactly as written,
-with no hidden behavior or magic.
+Vyom is designed for clarity: every line executes exactly as written, with no hidden behavior, implicit conversions, or magic layers.
 
-“If the code can be followed line by line, the design is correct.”
-
-------------------------------------------------------------
-
-🚀 Current Version
-
-Vyom v0.6 — Loops & Iteration ⭐
-
-New in v0.6
-- While loops: while (condition):
-- C-style for loops: for (init; condition; step):
-- Range-based loops: for i in range(n):
-- Loop nesting with correct scope handling
-- Proper return behavior inside loops
-- All features from v0.5 (functions, logic, control flow)
-
-Truth model:
-0 → false  
-non-zero → true  
+> “If the code can be followed line by line, the design is correct.”
 
 ------------------------------------------------------------
 
-📁 Package Contents (Windows)
+## 🚀 Current Version
 
-Vyom-0.6-Windows/
-├── vyom.exe
-├── install.bat
-├── uninstall.bat
-├── README.md
-├── CHANGELOG.md
-├── LICENSE
+**Vyom v0.7 — Strict Core & Developer Quality ⭐**
+
+### New in v0.7
+- Mandatory `print(...)` syntax (parentheses required)
+- Multi‑argument `print()` support
+- `break` and `continue` statements
+- Block‑local loop scope
+- `const` variables (immutable)
+- Optional explicit typing: `int`, `double`, `string`
+- Strict type‑safe comparisons
+- Introspection constants: `__version__`, `__file__`
+- Improved error messages with exact line numbers
+- All features from v0.6 (loops, functions, control flow)
+
+### Truth Model
+```
+0        → false
+non‑zero → true
+```
+
+------------------------------------------------------------
+
+## 📁 Package Contents (Windows)
+
+```
+Vyom-0.7-Windows/
+├── vyom.exe          # Vyom interpreter
+├── install.bat      # Installer (adds Vyom to PATH)
+├── uninstall.bat    # Uninstaller (clean removal)
+├── README.md        # This file
 └── examples/
-    └── main.vy
+    └── main.vy      # Progressive demo program
+```
 
 ------------------------------------------------------------
 
-⚡ Quick Start
+## ⚡ Quick Start
 
-Install:
-- Right click install.bat → Run as administrator
-- Restart terminal
+### Install
+1. Right‑click **install.bat**
+2. Select **Run as administrator**
+3. Close the terminal
+4. Open a **new** terminal window
 
-Verify:
+### Verify
+```bash
 vyom --version
+```
+
+Expected output:
+```
+Vyom v0.7
+```
+
+### Run Example
+```bash
+vyom C:\Vyom\examples\main.vy
+```
 
 ------------------------------------------------------------
 
-📜 License
+## ✨ Example
 
-MIT License
+```vy
+name = "Vyom"
+print("Hello")
+print(name)
+```
 
-Made with ❤️ by Sanket Bharadwaj
+Output:
+```
+Hello
+Vyom
+```
+
+------------------------------------------------------------
+
+## 📜 License
+
+MIT License — see **LICENSE** file for details.
+
+------------------------------------------------------------
+
+Made with ❤️ by **Sanket Bharadwaj**
+
+Vyom is designed to be understood, not rushed.

@@ -1,25 +1,77 @@
 @echo off
-title Vyom Uninstaller v0.6
+title Vyom Uninstaller v0.7
 color 0C
+setlocal EnableDelayedExpansion
 
+:: ================= CONFIG =================
+set TOTAL_STEPS=4
+set CURRENT_STEP=0
+set INSTALL_DIR=C:\Vyom
+
+:: ================= ASCII BANNER =================
+:banner
 cls
 echo.
 echo ============================================================
+echo.
 echo   VYOM PROGRAMMING LANGUAGE
 echo.
-echo   v0.6 — Uninstaller
+echo   v0.7 — Uninstaller
+echo   Clean • Explicit • No Leftovers
 echo.
-echo   This will remove Vyom from your system.
 echo   Created by Sanket Bharadwaj
 echo.
 echo ============================================================
 echo.
-timeout /t 1 >nul
+echo :+++++++++++++++++++++++++++++=++++++++++++++++:
+echo +@@@@@@@@@@@@@@@@@@@@@@@@@@@%%%%@@@@@@@@@@@@@@@+
+echo +@@@@@@@@@@@@@@@@@@@@@@@@@@%%%@%@@%%@@@@@@@@@@@+
+echo +@@@@%@@@@@+        @@@@%%%%%@%@@@@@@@@@%%%%%@%=
+echo =%@@%@@@:      :=+:   %@@%@@@%@%@@@@@@@@@%@%%@%=
+echo +@@@@@   =@@@@@=    -:  @@@@%@@@@%@@@@@@@@@@@@@+
+echo +%%@* @@@@@@@@@@@@@#    =@@@%@@@@@@@@@@@@@@@@%@+
+echo +@@@@@@@@:     @@@@@@@   @@@@@@%          .@@@@+
+echo +@@@@     :==-     @@@@@  @@@@##@:  .**+=-   @@+
+echo +@@   :==++++=====   @@@@@:@@@@@@@@@ :+**+++  @@
+echo %@  :*******+****=++:  @@@@@@@@%%@%@@ ++**=++  @
+echo @  =**++=---===--=++++:  @@@@@%@@@@@@:****+++= @
+echo @ -++++=#@%%%*:    .=+++:   @@@@@@@  =++**+*+= @
+echo @ +*+++%#**=  *@@@@    =++=        .++*#*=+*+  @
+echo @ -+++#***+ *@@@@@@@@@.  -+++-:*######+=+*#+  @@
+echo @  +****+++ @@@@@@@@@@@@#  :***+::=+++***-   @@+
+echo @@ :++*+*++ @@@@@@@@@@@@@@@   .+***+==:    @@@@+
+echo +@@ -+++**+  @@@%@@     @@@@@@         *@@@@@@@+
+echo +@@@ :+=+++= #@@@@  **=   +@@@@@@@@@@@@@@@@%@@@+
+echo +@@@@  -=+++-  @@@  =+*+=:   .%@@@@@@*  *@@%@@@+
+echo +@@@@@+  :+++=  @@@  ++**+==:         @@@@@@@@@+
+echo +@@@@@@@*       @@@@   =**#####*-  .@@@@%%%%@@@+
+echo +@%@@@@@@@@=  @@@@@@@@           @@@@@%%@@@@@@@+
+echo +@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@%%%@@@%+
+echo +@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+
+echo :+=+++++++++++++++++=+++++++=+==+++++++++++===+:
+echo.
+exit /b
 
-:: ---------- PATH ----------
-set INSTALL_DIR=C:\Vyom
+:: ================= PROGRESS BAR =================
+:progress
+set /a CURRENT_STEP+=1
+set BAR=
+set /a FILLED=(CURRENT_STEP*20)/TOTAL_STEPS
+set /a EMPTY=20-FILLED
 
-:: ---------- CONFIRM ----------
+for /L %%i in (1,1,!FILLED!) do set BAR=!BAR!█
+for /L %%i in (1,1,!EMPTY!) do set BAR=!BAR!░
+
+call :banner
+echo   Progress: [!BAR!]  !CURRENT_STEP!/!TOTAL_STEPS!
+echo.
+exit /b
+
+:: ================= START =================
+call :banner
+timeout /t 2 >nul
+
+:: ================= CONFIRM =================
 color 0E
 choice /C YN /M "Are you sure you want to uninstall Vyom?"
 if errorlevel 2 (
@@ -30,84 +82,53 @@ if errorlevel 2 (
 )
 color 0C
 
-:: ---------- STEP 1 ----------
-echo.
-echo [1/4] Checking installation...
+:: ================= STEP 1 =================
+call :progress
+echo Checking installation...
 if not exist "%INSTALL_DIR%" (
-    color 0E
-    echo     [i] Vyom directory not found
-    echo     [i] It may already be uninstalled
+    echo Vyom directory not found. Nothing to remove.
     goto :cleanup_path
-)
-
-if exist "%INSTALL_DIR%\vyom.exe" (
-    echo     [+] Vyom installation detected
-) else (
-    color 0E
-    echo     [!] vyom.exe not found
-    echo     [i] Cleaning remaining files anyway
 )
 timeout /t 1 >nul
 
-:: ---------- STEP 2 ----------
-echo.
-echo [2/4] Removing files...
+:: ================= STEP 2 =================
+call :progress
+echo Removing Vyom files...
 
 if exist "%INSTALL_DIR%\vyom.exe" (
     del /Q "%INSTALL_DIR%\vyom.exe" >nul 2>&1
-    echo     [+] vyom.exe removed
 )
 
 if exist "%INSTALL_DIR%\examples" (
     rmdir /S /Q "%INSTALL_DIR%\examples" >nul 2>&1
-    echo     [+] Examples removed
 )
 
 rmdir /S /Q "%INSTALL_DIR%" >nul 2>&1
-if not exist "%INSTALL_DIR%" (
-    echo     [+] Installation directory removed
-) else (
-    color 0E
-    echo     [!] Could not remove directory completely
-    echo     [!] You may delete manually: %INSTALL_DIR%
-)
 timeout /t 1 >nul
 
 :cleanup_path
-:: ---------- STEP 3 ----------
-echo.
-echo [3/4] Removing Vyom from PATH...
+:: ================= STEP 3 =================
+call :progress
+echo Cleaning PATH...
 
 echo %PATH% | find /i "%INSTALL_DIR%" >nul
-if %errorlevel% neq 0 (
-    echo     [i] Vyom not found in PATH
-    goto :finalize
-)
-
-powershell -Command ^
-"$p=[Environment]::GetEnvironmentVariable('Path','User'); ^
- $n=($p.Split(';') | Where-Object { $_ -ne 'C:\Vyom' }) -join ';'; ^
- [Environment]::SetEnvironmentVariable('Path',$n,'User')" >nul 2>&1
-
 if %errorlevel% equ 0 (
-    echo     [+] PATH entry removed
-) else (
-    color 0E
-    echo     [!] Automatic PATH cleanup failed
-    echo     [!] Remove C:\Vyom manually from PATH if needed
+    powershell -Command ^
+    "$p=[Environment]::GetEnvironmentVariable('Path','User'); ^
+     $n=($p.Split(';') | Where-Object { $_ -ne 'C:\Vyom' }) -join ';'; ^
+     [Environment]::SetEnvironmentVariable('Path',$n,'User')" >nul 2>&1
 )
 timeout /t 1 >nul
 
-:finalize
-:: ---------- STEP 4 ----------
-echo.
-echo [4/4] Finalizing...
+:: ================= STEP 4 =================
+call :progress
 timeout /t 1 >nul
 
+:: ================= DONE =================
+call :banner
 color 0A
-echo.
 echo ============================================================
-echo   Vyom v0.6 Uninstalled Successfully
+echo   Vyom v0.7 Uninstalled Successfully
 echo ============================================================
 echo.
 echo Removed:
@@ -117,10 +138,10 @@ echo   [x] example programs
 echo   [x] PATH entry
 echo.
 echo IMPORTANT:
-echo   - Close this terminal window
-echo   - Open a NEW terminal session
+echo   - Close this terminal
+echo   - Open a NEW terminal
 echo.
-echo To verify (in new terminal):
+echo Verify:
 echo   vyom --version
 echo   (should say command not found)
 echo.
