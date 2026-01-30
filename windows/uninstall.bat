@@ -8,8 +8,7 @@ set TOTAL_STEPS=4
 set CURRENT_STEP=0
 set INSTALL_DIR=C:\Vyom
 
-:: ================= ASCII BANNER =================
-:banner
+:: ================= BANNER =================
 cls
 echo.
 echo ============================================================
@@ -50,25 +49,7 @@ echo +@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@%%%@@@%+
 echo +@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+
 echo :+=+++++++++++++++++=+++++++=+==+++++++++++===+:
 echo.
-exit /b
 
-:: ================= PROGRESS BAR =================
-:progress
-set /a CURRENT_STEP+=1
-set BAR=
-set /a FILLED=(CURRENT_STEP*20)/TOTAL_STEPS
-set /a EMPTY=20-FILLED
-
-for /L %%i in (1,1,!FILLED!) do set BAR=!BAR!█
-for /L %%i in (1,1,!EMPTY!) do set BAR=!BAR!░
-
-call :banner
-echo   Progress: [!BAR!]  !CURRENT_STEP!/!TOTAL_STEPS!
-echo.
-exit /b
-
-:: ================= START =================
-call :banner
 timeout /t 2 >nul
 
 :: ================= CONFIRM =================
@@ -78,13 +59,13 @@ if errorlevel 2 (
     echo.
     echo Uninstallation cancelled.
     pause
-    exit /b 0
+    goto :end
 )
 color 0C
 
 :: ================= STEP 1 =================
-call :progress
-echo Checking installation...
+set /a CURRENT_STEP+=1
+echo [1/4] Checking installation...
 if not exist "%INSTALL_DIR%" (
     echo Vyom directory not found. Nothing to remove.
     goto :cleanup_path
@@ -92,24 +73,19 @@ if not exist "%INSTALL_DIR%" (
 timeout /t 1 >nul
 
 :: ================= STEP 2 =================
-call :progress
-echo Removing Vyom files...
+set /a CURRENT_STEP+=1
+echo [2/4] Removing files...
 
-if exist "%INSTALL_DIR%\vyom.exe" (
-    del /Q "%INSTALL_DIR%\vyom.exe" >nul 2>&1
-)
-
-if exist "%INSTALL_DIR%\examples" (
-    rmdir /S /Q "%INSTALL_DIR%\examples" >nul 2>&1
-)
-
+if exist "%INSTALL_DIR%\vyom.exe" del /Q "%INSTALL_DIR%\vyom.exe" >nul 2>&1
+if exist "%INSTALL_DIR%\examples" rmdir /S /Q "%INSTALL_DIR%\examples" >nul 2>&1
 rmdir /S /Q "%INSTALL_DIR%" >nul 2>&1
+
 timeout /t 1 >nul
 
 :cleanup_path
 :: ================= STEP 3 =================
-call :progress
-echo Cleaning PATH...
+set /a CURRENT_STEP+=1
+echo [3/4] Cleaning PATH...
 
 echo %PATH% | find /i "%INSTALL_DIR%" >nul
 if %errorlevel% equ 0 (
@@ -118,14 +94,15 @@ if %errorlevel% equ 0 (
      $n=($p.Split(';') | Where-Object { $_ -ne 'C:\Vyom' }) -join ';'; ^
      [Environment]::SetEnvironmentVariable('Path',$n,'User')" >nul 2>&1
 )
+
 timeout /t 1 >nul
 
 :: ================= STEP 4 =================
-call :progress
+set /a CURRENT_STEP+=1
 timeout /t 1 >nul
 
 :: ================= DONE =================
-call :banner
+cls
 color 0A
 echo ============================================================
 echo   Vyom v0.7 Uninstalled Successfully
@@ -147,3 +124,6 @@ echo   (should say command not found)
 echo.
 echo ============================================================
 pause
+
+:end
+endlocal

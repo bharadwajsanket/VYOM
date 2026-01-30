@@ -7,8 +7,7 @@ setlocal EnableDelayedExpansion
 set TOTAL_STEPS=5
 set CURRENT_STEP=0
 
-:: ================= ASCII BANNER =================
-:banner
+:: ================= BANNER =================
 cls
 echo.
 echo =====================================================================
@@ -49,25 +48,7 @@ echo +@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@%%%@@@%+
 echo +@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+
 echo :+=+++++++++++++++++=+++++++=+==+++++++++++===+:
 echo.
-exit /b
 
-:: ================= PROGRESS BAR =================
-:progress
-set /a CURRENT_STEP+=1
-set BAR=
-set /a FILLED=(CURRENT_STEP*20)/TOTAL_STEPS
-set /a EMPTY=20-FILLED
-
-for /L %%i in (1,1,!FILLED!) do set BAR=!BAR!█
-for /L %%i in (1,1,!EMPTY!) do set BAR=!BAR!░
-
-call :banner
-echo   Progress: [!BAR!]  !CURRENT_STEP!/!TOTAL_STEPS!
-echo.
-exit /b
-
-:: ================= START =================
-call :banner
 timeout /t 2 >nul
 
 :: ================= ADMIN CHECK =================
@@ -77,7 +58,7 @@ if %errorLevel% neq 0 (
     echo [WARNING] Not running as administrator
     echo PATH will be updated for USER only.
     choice /C YN /M "Continue installation?"
-    if errorlevel 2 exit /b 1
+    if errorlevel 2 goto :end
     color 0A
 )
 
@@ -86,35 +67,35 @@ set INSTALL_DIR=C:\Vyom
 set EXAMPLES_DIR=%INSTALL_DIR%\examples
 
 :: ================= STEP 1 =================
-call :progress
-echo Creating directories...
+set /a CURRENT_STEP+=1
+echo [1/5] Creating directories...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 if not exist "%EXAMPLES_DIR%" mkdir "%EXAMPLES_DIR%"
 timeout /t 1 >nul
 
 :: ================= STEP 2 =================
-call :progress
-echo Installing Vyom executable...
+set /a CURRENT_STEP+=1
+echo [2/5] Installing Vyom executable...
 if not exist "%~dp0vyom.exe" (
     color 0C
     echo ERROR: vyom.exe not found
     pause
-    exit /b 1
+    goto :end
 )
 copy /Y "%~dp0vyom.exe" "%INSTALL_DIR%\vyom.exe" >nul
 timeout /t 1 >nul
 
 :: ================= STEP 3 =================
-call :progress
-echo Installing examples...
+set /a CURRENT_STEP+=1
+echo [3/5] Installing examples...
 if exist "%~dp0examples" (
     xcopy /E /I /Y "%~dp0examples" "%EXAMPLES_DIR%" >nul
 )
 timeout /t 1 >nul
 
 :: ================= STEP 4 =================
-call :progress
-echo Adding Vyom to PATH...
+set /a CURRENT_STEP+=1
+echo [4/5] Adding Vyom to PATH...
 echo %PATH% | find /i "%INSTALL_DIR%" >nul
 if %errorlevel% neq 0 (
     powershell -Command ^
@@ -125,13 +106,13 @@ if %errorlevel% neq 0 (
 timeout /t 1 >nul
 
 :: ================= STEP 5 =================
-call :progress
-echo Verifying installation...
+set /a CURRENT_STEP+=1
+echo [5/5] Verifying installation...
 "%INSTALL_DIR%\vyom.exe" --version
 timeout /t 1 >nul
 
 :: ================= DONE =================
-call :banner
+cls
 echo ============================================================
 echo   Vyom v0.7 Installed Successfully!
 echo ============================================================
@@ -142,3 +123,6 @@ echo     vyom C:\Vyom\examples\main.vy
 echo.
 echo ============================================================
 pause
+
+:end
+endlocal
