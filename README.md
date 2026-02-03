@@ -150,6 +150,7 @@ Vyom
 
 ---
 
+
 ## Philosophy
 
 Vyom is designed to be **readable**, **predictable**, and **honest** in execution.
