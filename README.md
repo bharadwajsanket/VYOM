@@ -28,13 +28,13 @@ If you cannot trace execution line-by-line through the source, the design is wro
 
 ## Status
 
-**Current Release:** v0.7.0 — *Strict Core & Developer Quality*
+**Current Release:** v0.8.0 — *Strict Core + Fixed Arrays*
 
 ```
 Language:     Vyom
-Version:      0.7.0
+Version:      0.8.0
 License:      MIT
-Interpreter:  ~1500 lines of C
+Interpreter:  ~2000 lines of C
 Dependencies: None (libc only)
 Platform:     POSIX-compliant systems, Windows
 ```
@@ -43,10 +43,14 @@ Platform:     POSIX-compliant systems, Windows
 
 ## Features
 
-### Implemented in v0.7
+### Implemented in v0.8
 - Lexically scoped variables
 - Optional explicit typing: `int`, `double`, `string`
 - `const` variables (immutable)
+- **Fixed-size typed arrays** (numeric & string)
+- Array element assignment with mandatory bounds checking
+- **String indexing (read-only)**
+- **`len()` builtin** for arrays and strings
 - First-class functions (no closures)
 - Numeric and string literals
 - Arithmetic operators: `+ - * /`
@@ -56,21 +60,20 @@ Platform:     POSIX-compliant systems, Windows
 - Loops:
   - `while`
   - C-style `for`
-  - `for-in range`
+  - `for-in range(start, stop, step)`
 - `break` and `continue`
 - Block-local loop scope
+- **`exit(code)` builtin** with cleanup
 - Introspection constants: `__version__`, `__file__`
 - Mandatory `print(...)` with multi-argument support
 - Explicit return semantics
 
-### Not Yet Implemented
-- Closures
-- Arrays / collections
-- String methods
-- File I/O
-- Exceptions
-- Modules / imports
-- Classes / objects
+### Explicit Non-Goals
+- No dynamic arrays or lists
+- No garbage collection
+- No exceptions
+- No classes / objects
+- No implicit behavior
 
 ---
 
@@ -97,9 +100,10 @@ Verify:
 ```bash
 vyom --version
 ```
-⚠️ Windows Security Notice
 
-When running `install.bat`, Windows may show:
+⚠️ **Windows Security Notice**
+
+When running `install.bat`, Windows may show:  
 "Smart App Control blocked this file"
 
 This is expected for unsigned scripts.
@@ -108,6 +112,7 @@ To proceed:
 - Right click `install.bat`
 - Properties → Check "Unblock"
 - Run again (preferably as Administrator)
+
 ---
 
 ###  macOS / 🐧 Linux
@@ -161,3 +166,11 @@ Vyom is designed to be **readable**, **predictable**, and **honest** in executio
 The code you write is the code that runs.
 
 **Build with clarity. Execute with transparency.**
+<<<<<<< Updated upstream
+
+=======
+<<<<<<< HEAD
+=======
+
+>>>>>>> 85c8d09 (docs(v0.8): update README, roadmap, syntax guide and story)
+>>>>>>> Stashed changes
