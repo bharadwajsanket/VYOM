@@ -1,8 +1,121 @@
-
 # 📜 Vyom — Changelog
 
 All notable changes to the **Vyom Programming Language** are documented here.
-This file reflects the complete evolution from **v0.1 → v0.7**.
+This file reflects the complete evolution from **v0.1 → v0.8**.
+
+---
+
+# 🚀 v0.8 — Fixed Arrays & Explicit Semantics
+
+## Summary
+
+Vyom v0.8 is a **strict superset** of v0.7 focused on adding **carefully bounded data structures** while preserving the original execution model.
+
+No architectural redesign was performed. All v0.7 programs continue to run unchanged.
+
+This release deliberately adds *power without abstraction*.
+
+---
+
+## ✨ New Features
+
+### 1. Fixed-Size Typed Arrays
+
+- Supported element types:
+  - `int`
+  - `string`
+- Size decided at declaration time
+- No resizing, no dynamic growth
+- Mandatory bounds checking on every access
+
+```vy
+int a[3]
+string names[2]
+int b[3] = [1, 2, 3]
+```
+
+---
+
+### 2. Array Element Assignment
+
+```vy
+a[0] = 10
+names[1] = "Vyom"
+```
+
+- Index must be integer
+- Out-of-bounds → runtime error
+- `const` arrays are immutable
+
+---
+
+### 3. String Indexing (Read-Only)
+
+```vy
+string s = "hello"
+print(s[1])   # e
+```
+
+- Returns a **string of length 1**
+- Index must be integer
+- Strings remain immutable
+
+---
+
+### 4. `len()` Builtin
+
+Works only on:
+- arrays
+- strings
+
+```vy
+len(a)
+len("test")
+```
+
+- `len(number)` → runtime error
+
+---
+
+### 5. Enhanced `range()` Loop
+
+```vy
+for i in range(5):
+    print(i)
+
+for i in range(2, 10):
+    print(i)
+
+for i in range(0, 10, 2):
+    print(i)
+```
+
+- Supports 1 / 2 / 3 arguments
+- `step ≠ 0` enforced
+- Loop variable must be numeric
+- Loop variable cannot shadow typed / const variables
+
+---
+
+### 6. `exit(code)` Builtin
+
+```vy
+exit()
+exit(1)
+```
+
+- Immediately terminates program
+- Optional numeric exit code
+- Frees all allocated array memory before exiting
+
+---
+
+## 🔒 Stability Guarantee
+
+- No v0.7 behavior was removed
+- No syntax changes outside listed features
+- No implicit behavior added
+- No dynamic memory features exposed
 
 ---
 
@@ -10,34 +123,29 @@ This file reflects the complete evolution from **v0.1 → v0.7**.
 
 ## Summary
 
-Vyom v0.7 is a **strict core** release focused on developer quality, consistency, and safety.
-This is an incremental evolution, not a rewrite.
-
-All v0.6 features are preserved **except where explicitly changed**.
+Vyom v0.7 focused on **semantic clarity, safety, and consistency**.
 
 ---
 
 ## 🔥 Breaking Changes
 
-### 1. `print()` Now Requires Parentheses
+### `print()` Requires Parentheses
 
 **OLD (≤ v0.6):**
 ```vy
 print "hello"
-print x
 ```
 
 **NEW (v0.7):**
 ```vy
 print("hello")
-print(x)
 print("x =", x)
 print()
 ```
 
 ---
 
-## ✨ New Features
+## ✨ v0.7 Features
 
 - Multi-argument `print()`
 - `break` and `continue`
@@ -49,21 +157,21 @@ print()
 ---
 
 ## 📦 v0.6 — Loops & Iteration
-- while loops
-- for loops
-- range loops
+- `while`
+- C-style `for`
+- `for-in range`
 
 ---
 
 ## 🎯 v0.5 — Control Flow
-- if / elif / else
-- logic & comparisons
+- `if / elif / else`
+- Boolean logic
 
 ---
 
 ## 🧠 v0.4 — Safety
-- runtime validation
-- call stack
+- Runtime validation
+- Call stack enforcement
 
 ---
 
