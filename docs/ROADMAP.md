@@ -3,13 +3,14 @@
 Vyom evolves **intentionally and conservatively**.  
 Stability comes first. Features earn their place.
 
-This roadmap reflects **actual shipped versions and committed direction**, not hype.
+This roadmap reflects **actual shipped versions and committed direction**,  
+not aspirational promises.
 
 ---
 
 ## ✅ v0.1 — Core Language (Released)
 
-**Focus:** the absolute minimum to execute code
+**Focus:** the absolute minimum required to execute code
 
 - Variable assignment
 - Print statement
@@ -20,7 +21,7 @@ This roadmap reflects **actual shipped versions and committed direction**, not h
 
 ## ✅ v0.2 — Expressions (Released)
 
-**Focus:** Data and computation
+**Focus:** data and computation
 
 - Numeric and string literals
 - Variable reassignment
@@ -35,40 +36,38 @@ This roadmap reflects **actual shipped versions and committed direction**, not h
 **Focus:** function definitions and parsing
 
 - Function definitions using `def`
-- Parsing parameters and returns
-- Type annotation support (optional)
+- Parameters and return values
+- Optional type annotations
+- Static (lexical) scoping model
 
 ---
 
-## ✅ v0.4 — Execution (Released)
+## ✅ v0.4 — Execution Model (Released)
 
-**Focus:** completing the procedural execution model
+**Focus:** completing the procedural execution engine
 
-- function calls
-- parameters
-- return values
-- local scope
-- call stack
-- nested function calls
-- numeric-safe execution
-- clear runtime errors with line numbers
-- strict scope rules (no accidental shadowing)
+- Function calls
+- Local scope
+- Call stack
+- Nested function execution
+- Runtime error reporting with line numbers
+- Strict scope rules (no accidental shadowing)
 
 > v0.4 is the **first fully usable Vyom language**.
 
 ---
 
-## 🔒 v0.4.x — Stability & Hardening (Current)
+## 🧱 v0.4.x — Stability & Hardening (Completed Phase)
 
-**Focus:** correctness, clarity, and freezing core semantics
+**Focus:** freezing core semantics
 
-- bug fixes only
-- edge-case handling
-- documentation refinement
-- packaging & installer fixes
-- **NO new language features**
+- Bug fixes only
+- Edge-case handling
+- Interpreter safety
+- Documentation cleanup
+- Packaging improvements
 
-> v0.4.x defines Vyom’s **core identity**.
+> No new language features were introduced in this phase.
 
 ---
 
@@ -79,9 +78,9 @@ This roadmap reflects **actual shipped versions and committed direction**, not h
 - Comparison operators: `== != < > <= >=`
 - Logical operators: `and`, `or`, `not`
 - Short-circuit evaluation
-- `if / elif / else` with nesting
-- Numeric truth values: `0 = false`, non-zero = true
-- Parenthesized expressions
+- `if / elif / else`
+- Nested conditionals
+- Numeric truth values (`0 = false`, non-zero = true)
 
 ---
 
@@ -89,62 +88,76 @@ This roadmap reflects **actual shipped versions and committed direction**, not h
 
 **Focus:** controlled repetition
 
-- `while (condition):` loops
-- `for (init; condition; step):` C-style loops
-- `for i in range(n):` range-based loops
+- `while (condition):`
+- `for (init; condition; step):` (C-style)
+- `for i in range(n):`
 - Loop nesting
-- Proper return handling in loops
+- Correct `break`, `continue`, and `return` behavior
 
 ---
 
-## 📦 v0.7 — Collections (Planned)
+## ✅ v0.7 — Strict Core & Developer Quality (Released)
 
-**Focus:** minimal but practical containers
+**Focus:** correctness, explicitness, and discipline
 
-- Lists / arrays
-- Indexing (`x[0]`)
-- Iteration with `for` over lists
-- List length queries
+- Mandatory `print(...)` syntax
+- Multi-argument `print`
+- `const` variables (immutable)
+- Strict type-safe comparisons
+- Loop-local scope isolation
+- `break` and `continue`
+- Introspection constants: `__version__`, `__file__`
 
----
-
-## 📝 v0.8 — String Operations (Planned)
-
-**Focus:** basic string manipulation
-
-- String indexing (`s[0]`)
-- String concatenation (refined)
-- Built-in string functions
+> v0.7 intentionally adds **no data structures**.
 
 ---
 
-## 💾 v0.9 — File I/O (Planned)
+## ✅ v0.8 — Fixed Arrays & Indexing (Released)
 
-**Focus:** reading and writing files
+**Focus:** minimal data structures without abstraction creep
 
-- File reading
-- File writing
-- Basic file operations
+- Fixed-size typed arrays (numeric & string)
+- Array element assignment with bounds checking
+- Read-only string indexing (`s[i]`)
+- `len()` for arrays and strings
+- Enhanced `range(start, stop, step)` with strict validation
+- `exit(code)` with full memory cleanup
+
+> No dynamic resizing. No collections magic.
 
 ---
 
-## 🚀 v1.0 — Stable Core (Goal)
+## 🔮 v0.9 — File I/O & Environment (Planned)
+
+**Focus:** controlled interaction with the outside world
+
+- File read operations
+- File write operations
+- Explicit error handling
+- No implicit resource management
+
+---
+
+## 🚀 v1.0 — Stable Core (Target)
 
 **Definition of v1.0:**
+
 - Stable syntax (no breaking changes)
 - Stable semantics
-- Complete procedural language
-- Production-ready
+- Fully documented behavior
+- Predictable execution model
+- Production-ready procedural scripting language
 
 ---
 
 ## 🧭 Design Rule (Non-Negotiable)
 
 Vyom will **never** add:
-- hidden execution passes
-- implicit coercions
-- magical scope behavior
-- features that cannot be explained line-by-line
+
+- Hidden execution passes
+- Implicit type coercions
+- Magical scope behavior
+- Features that cannot be explained line-by-line
 
 If a feature cannot be taught cleanly,  
-it does not belong in Vyom.
+**it does not belong in Vyom.**
