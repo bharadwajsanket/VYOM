@@ -1,6 +1,6 @@
 // Vyom Programming Language
 // Created by Sanket Bharadwaj
-// Vyom v0.7 — Strict Core + Developer Quality
+// Vyom v0.8 — Strict Core + Developer Quality + Arrays
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,11 +13,12 @@
 #define MAX_FUNCS 128
 #define MAX_CALL_DEPTH 64
 #define MAX_ARGS  8
-#define VYOM_VERSION "0.7"
+#define MAX_ARRAY_SIZE 10000
+#define VYOM_VERSION "0.8"
 
 // ================= TYPES =================
 
-typedef enum { V_NUM, V_STR } ValType;
+typedef enum { V_NUM, V_STR, V_ARRAY } ValType;
 
 typedef struct {
     char name[64];
@@ -26,6 +27,11 @@ typedef struct {
     char str[256];
     int explicit;      // is this a typed variable?
     int is_const;      // is this a const variable?
+    // Array support
+    int is_array;
+    int array_size;
+    ValType array_elem_type;
+    void *array_data;  // Points to double* or char** depending on array_elem_type
 } Var;
 
 typedef struct {
@@ -39,7 +45,7 @@ typedef struct {
 typedef struct {
     Var locals[MAX_VARS];
     int local_count;
-    int is_loop_scope;  // NEW: track if this is a loop block scope
+    int is_loop_scope;  // track if this is a loop block scope
 } CallFrame;
 
 typedef struct {
@@ -64,11 +70,11 @@ int call_depth = 0;
 
 double return_value = 0;
 int did_return = 0;
-int did_break = 0;     // NEW: for break statement
-int did_continue = 0;  // NEW: for continue statement
+int did_break = 0;
+int did_continue = 0;
 
 int current_line = 0;
-char current_filename[256] = "";  // NEW: for __file__ introspection
+char current_filename[256] = "";
 
 // ================= HELPERS =================
 
@@ -99,9 +105,32 @@ void error(const char *msg, const char *name) {
     exit(1);
 }
 
+void free_var_array(Var *v) {
+    if (v->is_array && v->array_data) {
+        if (v->array_elem_type == V_STR) {
+            char **str_array = (char**)v->array_data;
+            for (int i = 0; i < v->array_size; i++) {
+                if (str_array[i]) free(str_array[i]);
+            }
+        }
+        free(v->array_data);
+        v->array_data = NULL;
+    }
+}
+
+void cleanup_all_arrays() {
+    for (int i = 0; i < global_count; i++) {
+        free_var_array(&globals[i]);
+    }
+    for (int d = 0; d < call_depth; d++) {
+        for (int i = 0; i < call_stack[d].local_count; i++) {
+            free_var_array(&call_stack[d].locals[i]);
+        }
+    }
+}
+
 // ================= SCOPE MANAGEMENT =================
 
-// Push a new scope (for loops)
 void push_scope(int is_loop) {
     if (call_depth >= MAX_CALL_DEPTH)
         error("scope stack overflow", NULL);
@@ -111,14 +140,18 @@ void push_scope(int is_loop) {
     call_depth++;
 }
 
-// Pop a scope (after loops)
 void pop_scope() {
     if (call_depth == 0)
         error("internal error: scope underflow", NULL);
+    
+    // Free arrays in this scope
+    for (int i = 0; i < call_stack[call_depth - 1].local_count; i++) {
+        free_var_array(&call_stack[call_depth - 1].locals[i]);
+    }
+    
     call_depth--;
 }
 
-// Check if we're currently inside any loop
 int inside_loop() {
     for (int i = call_depth - 1; i >= 0; i--) {
         if (call_stack[i].is_loop_scope) return 1;
@@ -135,13 +168,11 @@ int find_global(const char *name) {
 }
 
 int find_local(const char *name) {
-    // Search from innermost to outermost scope
     for (int depth = call_depth - 1; depth >= 0; depth--) {
         CallFrame *f = &call_stack[depth];
         for (int i = f->local_count - 1; i >= 0; i--) {
             if (!strcmp(f->locals[i].name, name)) {
-                // Found in this scope at this depth
-                return depth * MAX_VARS + i;  // Encode depth + index
+                return depth * MAX_VARS + i;
             }
         }
     }
@@ -149,12 +180,12 @@ int find_local(const char *name) {
 }
 
 int get_var(const char *name, Var *out) {
-    // Check for introspection constants
     if (!strcmp(name, "__version__")) {
         out->type = V_STR;
         strcpy(out->str, VYOM_VERSION);
         out->is_const = 1;
         strcpy(out->name, "__version__");
+        out->is_array = 0;
         return 1;
     }
     if (!strcmp(name, "__file__")) {
@@ -162,6 +193,7 @@ int get_var(const char *name, Var *out) {
         strcpy(out->str, current_filename);
         out->is_const = 1;
         strcpy(out->name, "__file__");
+        out->is_array = 0;
         return 1;
     }
     
@@ -181,7 +213,6 @@ int get_var(const char *name, Var *out) {
 }
 
 void set_var(Var v) {
-    // Check for introspection constants
     if (!strcmp(v.name, "__version__") || !strcmp(v.name, "__file__")) {
         error("cannot reassign built-in constant", v.name);
     }
@@ -189,67 +220,68 @@ void set_var(Var v) {
     int gi = find_global(v.name);
     int li = find_local(v.name);
 
-    // If variable exists locally (in any scope), modify it
     if (li != -1) {
         int depth = li / MAX_VARS;
         int idx = li % MAX_VARS;
         
-        // Check const
         if (call_stack[depth].locals[idx].is_const) {
             error("cannot reassign const variable", v.name);
         }
         
-        // Check type
         if (call_stack[depth].locals[idx].explicit &&
             call_stack[depth].locals[idx].type != v.type) {
             error("cannot change type of variable", v.name);
         }
         
-        // Preserve const and explicit flags
+        if (call_stack[depth].locals[idx].is_array != v.is_array) {
+            error("cannot change array status of variable", v.name);
+        }
+        
         v.is_const = call_stack[depth].locals[idx].is_const;
         v.explicit = call_stack[depth].locals[idx].explicit;
+        
+        // Free old array data if replacing
+        if (call_stack[depth].locals[idx].is_array) {
+            free_var_array(&call_stack[depth].locals[idx]);
+        }
         
         call_stack[depth].locals[idx] = v;
         return;
     }
 
-    // Variable doesn't exist locally
-    // Check if it exists globally
     if (gi != -1) {
-        // Variable exists globally
-        
-        // Check if we're in some local scope
         if (call_depth > 0) {
-            // If this is an explicitly typed or const variable, it's a declaration (shadowing error)
-            // Otherwise, it's just modifying the global
             if (v.explicit || v.is_const) {
                 error("variable shadows global variable", v.name);
             }
         }
         
-        // Modify global
         if (globals[gi].is_const)
             error("cannot reassign const variable", v.name);
         if (globals[gi].explicit && globals[gi].type != v.type)
             error("cannot change type of variable", v.name);
         
-        // Preserve const and explicit flags
+        if (globals[gi].is_array != v.is_array) {
+            error("cannot change array status of variable", v.name);
+        }
+        
         v.is_const = globals[gi].is_const;
         v.explicit = globals[gi].explicit;
+        
+        if (globals[gi].is_array) {
+            free_var_array(&globals[gi]);
+        }
         
         globals[gi] = v;
         return;
     }
 
-    // Variable doesn't exist anywhere - create new
     if (call_depth > 0) {
-        // Create in current local scope
         CallFrame *f = &call_stack[call_depth - 1];
         f->locals[f->local_count++] = v;
         return;
     }
 
-    // Create in global scope
     globals[global_count++] = v;
 }
 
@@ -268,7 +300,6 @@ int find_func(const char *name) {
     return -1;
 }
 
-// -------- function call (expression context) --------
 double call_function_expr(Func *f, char args[MAX_ARGS][64], int argc) {
     if (argc != f->param_count)
         error("incorrect argument count for function", f->name);
@@ -282,7 +313,7 @@ double call_function_expr(Func *f, char args[MAX_ARGS][64], int argc) {
     }
 
     call_stack[call_depth].local_count = 0;
-    call_stack[call_depth].is_loop_scope = 0;  // function scope, not loop
+    call_stack[call_depth].is_loop_scope = 0;
     call_depth++;
 
     for (int i = 0; i < argc; i++) {
@@ -295,6 +326,7 @@ double call_function_expr(Func *f, char args[MAX_ARGS][64], int argc) {
         v.num = values[i];
         v.explicit = 0;
         v.is_const = 0;
+        v.is_array = 0;
         set_var(v);
     }
 
@@ -315,7 +347,6 @@ double call_function_expr(Func *f, char args[MAX_ARGS][64], int argc) {
     return return_value;
 }
 
-// -------- function call (statement context) --------
 void call_function_stmt(Func *f, char args[MAX_ARGS][64], int argc) {
     if (call_depth >= MAX_CALL_DEPTH)
         error("call stack overflow", NULL);
@@ -326,7 +357,7 @@ void call_function_stmt(Func *f, char args[MAX_ARGS][64], int argc) {
     }
 
     call_stack[call_depth].local_count = 0;
-    call_stack[call_depth].is_loop_scope = 0;  // function scope, not loop
+    call_stack[call_depth].is_loop_scope = 0;
     call_depth++;
 
     for (int i = 0; i < argc; i++) {
@@ -339,6 +370,7 @@ void call_function_stmt(Func *f, char args[MAX_ARGS][64], int argc) {
         v.num = values[i];
         v.explicit = 0;
         v.is_const = 0;
+        v.is_array = 0;
         set_var(v);
     }
 
@@ -353,12 +385,11 @@ void call_function_stmt(Func *f, char args[MAX_ARGS][64], int argc) {
     }
 
     call_depth--;
-    did_return = 0; // ignore return value
+    did_return = 0;
 }
 
 // ================= EXPRESSION EVALUATION PIPELINE =================
 
-// LEVEL 5: eval_term — variables, numbers, 'not', function calls
 double eval_term(const char *s) {
     char buf[MAX_LINE];
     strcpy(buf, s);
@@ -378,6 +409,84 @@ double eval_term(const char *s) {
     if (!strncmp(str, "not", 3) && (str[3] == ' ' || str[3] == '\t' || str[3] == '(')) {
         double val = eval_term(trim(str + 3));
         return (val == 0) ? 1 : 0;
+    }
+
+    // Check for len() builtin
+    if (!strncmp(str, "len", 3) && str[3] == '(') {
+        char *rp = strrchr(str, ')');
+        if (!rp) error("unmatched parentheses in len()", NULL);
+        
+        char arg[MAX_LINE];
+        strncpy(arg, str + 4, rp - str - 4);
+        arg[rp - str - 4] = 0;
+        trim(arg);
+        
+        // Check for array indexing in argument
+        char *bracket = strchr(arg, '[');
+        if (!bracket) {
+            // Simple variable
+            Var v;
+            if (!get_var(arg, &v)) {
+                error("len() requires array or string variable", arg);
+            }
+            
+            if (v.is_array) {
+                return (double)v.array_size;
+            } else if (v.type == V_STR) {
+                return (double)strlen(v.str);
+            } else {
+                error("len() requires array or string, not number", arg);
+            }
+        } else {
+            error("len() does not support indexing expressions", NULL);
+        }
+    }
+
+    // Check for array/string indexing
+    char *bracket = strchr(str, '[');
+    if (bracket && !strchr(str, '(')) {  // Not a function call
+        char varname[64];
+        strncpy(varname, str, bracket - str);
+        varname[bracket - str] = 0;
+        trim(varname);
+        
+        char *bracket_end = strchr(bracket, ']');
+        if (!bracket_end) error("unmatched brackets in indexing", NULL);
+        
+        char index_expr[MAX_LINE];
+        strncpy(index_expr, bracket + 1, bracket_end - bracket - 1);
+        index_expr[bracket_end - bracket - 1] = 0;
+        trim(index_expr);
+        
+        double idx = eval_condition(index_expr);
+        if (idx != (int)idx) error("array/string index must be integer", NULL);
+        int index = (int)idx;
+        
+        Var v;
+        if (!get_var(varname, &v)) {
+            error("undefined variable", varname);
+        }
+        
+        if (v.is_array) {
+            if (index < 0 || index >= v.array_size) {
+                error("array index out of bounds", varname);
+            }
+            
+            if (v.array_elem_type == V_NUM) {
+                double *arr = (double*)v.array_data;
+                return arr[index];
+            } else {
+                error("cannot use array element in numeric expression", varname);
+            }
+        } else if (v.type == V_STR) {
+            if (index < 0 || index >= (int)strlen(v.str)) {
+                error("string index out of bounds", varname);
+            }
+            // Return ASCII value of character
+            return (double)v.str[index];
+        } else {
+            error("indexing requires array or string", varname);
+        }
     }
 
     char *lp = strchr(str, '(');
@@ -410,6 +519,7 @@ double eval_term(const char *s) {
 
     Var v;
     if (get_var(str, &v)) {
+        if (v.is_array) error("cannot use array in numeric expression", str);
         if (v.type != V_NUM) error("not a number", str);
         return v.num;
     }
@@ -421,7 +531,6 @@ double eval_term(const char *s) {
     return 0;
 }
 
-// LEVEL 4: eval_expr — arithmetic (+ - * /)
 double eval_expr(const char *s) {
     char buf[MAX_LINE];
     strcpy(buf, s);
@@ -429,8 +538,8 @@ double eval_expr(const char *s) {
 
     int depth = 0;
     for (char *p = str + strlen(str) - 1; p >= str; p--) {
-        if (*p == ')') depth++;
-        else if (*p == '(') depth--;
+        if (*p == ')' || *p == ']') depth++;
+        else if (*p == '(' || *p == '[') depth--;
         else if (depth == 0 && (*p == '+' || *p == '-')) {
             char left[MAX_LINE], right[MAX_LINE];
             strncpy(left, str, p - str);
@@ -447,8 +556,8 @@ double eval_expr(const char *s) {
 
     depth = 0;
     for (char *p = str + strlen(str) - 1; p >= str; p--) {
-        if (*p == ')') depth++;
-        else if (*p == '(') depth--;
+        if (*p == ')' || *p == ']') depth++;
+        else if (*p == '(' || *p == '[') depth--;
         else if (depth == 0 && (*p == '*' || *p == '/')) {
             char left[MAX_LINE], right[MAX_LINE];
             strncpy(left, str, p - str);
@@ -469,7 +578,6 @@ double eval_expr(const char *s) {
     return eval_term(str);
 }
 
-// Helper: evaluate expression and return type info
 typedef struct {
     double num_val;
     char str_val[256];
@@ -482,9 +590,7 @@ EvalResult eval_typed_expr(const char *s) {
     strcpy(buf, s);
     char *str = trim(buf);
     
-    // Check if this is JUST a string literal (single quotes pair, nothing else)
     if (*str == '"') {
-        // Count quotes to see if we have more than one pair
         int quote_count = 0;
         int escaped = 0;
         for (char *p = str; *p; p++) {
@@ -498,7 +604,6 @@ EvalResult eval_typed_expr(const char *s) {
             escaped = 0;
         }
         
-        // If exactly 2 quotes (one pair) and starts/ends with quote, it's a pure literal
         if (quote_count == 2 && str[strlen(str) - 1] == '"') {
             result.type = V_STR;
             strncpy(result.str_val, str + 1, strlen(str) - 2);
@@ -508,28 +613,64 @@ EvalResult eval_typed_expr(const char *s) {
         }
     }
     
-    // Check for variable that might be a string (simple identifier only)
-    if (!strchr(str, ' ') && !strchr(str, '\t') && !strchr(str, '(') && 
-        !strchr(str, '+') && !strchr(str, '-') && !strchr(str, '*') && 
-        !strchr(str, '/') && !strchr(str, '<') && !strchr(str, '>') && 
-        !strchr(str, '=') && !strchr(str, '!') && !strchr(str, '"')) {
-        Var v;
-        if (get_var(str, &v) && v.type == V_STR) {
-            result.type = V_STR;
-            strcpy(result.str_val, v.str);
-            result.num_val = 0;
-            return result;
+    // Check for string indexing
+    char *bracket = strchr(str, '[');
+    if (bracket && !strchr(str, '(') && !strchr(str, '+') && !strchr(str, '-') &&
+        !strchr(str, '*') && !strchr(str, '/')) {
+        
+        char varname[64];
+        strncpy(varname, str, bracket - str);
+        varname[bracket - str] = 0;
+        trim(varname);
+        
+        char *bracket_end = strchr(bracket, ']');
+        if (bracket_end) {
+            char index_expr[MAX_LINE];
+            strncpy(index_expr, bracket + 1, bracket_end - bracket - 1);
+            index_expr[bracket_end - bracket - 1] = 0;
+            trim(index_expr);
+            
+            double idx = eval_condition(index_expr);
+            if (idx != (int)idx) error("string index must be integer", NULL);
+            int index = (int)idx;
+            
+            Var v;
+            if (get_var(varname, &v) && v.type == V_STR) {
+                if (index < 0 || index >= (int)strlen(v.str)) {
+                    error("string index out of bounds", varname);
+                }
+                result.type = V_STR;
+                result.str_val[0] = v.str[index];
+                result.str_val[1] = 0;
+                result.num_val = 0;
+                return result;
+            }
         }
     }
     
-    // Otherwise it's a numeric expression
+    if (!strchr(str, ' ') && !strchr(str, '\t') && !strchr(str, '(') && 
+        !strchr(str, '+') && !strchr(str, '-') && !strchr(str, '*') && 
+        !strchr(str, '/') && !strchr(str, '<') && !strchr(str, '>') && 
+        !strchr(str, '=') && !strchr(str, '!') && !strchr(str, '"') &&
+        !strchr(str, '[')) {
+        Var v;
+        if (get_var(str, &v)) {
+            if (v.is_array) error("cannot use array in expression", str);
+            if (v.type == V_STR) {
+                result.type = V_STR;
+                strcpy(result.str_val, v.str);
+                result.num_val = 0;
+                return result;
+            }
+        }
+    }
+    
     result.type = V_NUM;
     result.num_val = eval_condition(str);
     result.str_val[0] = 0;
     return result;
 }
 
-// LEVEL 3: eval_comparison — comparison operators (== != < > <= >=)
 double eval_comparison(const char *s) {
     char buf[MAX_LINE];
     strcpy(buf, s);
@@ -540,17 +681,15 @@ double eval_comparison(const char *s) {
     int found_comparison = 0;
     
     for (char *p = str; *p; p++) {
-        // Track string literals
         if (*p == '"' && (p == str || p[-1] != '\\')) {
             in_string = !in_string;
             continue;
         }
         
-        // Skip if inside string
         if (in_string) continue;
         
-        if (*p == '(') depth++;
-        else if (*p == ')') depth--;
+        if (*p == '(' || *p == '[') depth++;
+        else if (*p == ')' || *p == ']') depth--;
         else if (depth == 0) {
             if (p[1] && ((p[0] == '=' && p[1] == '=') ||
                          (p[0] == '!' && p[1] == '=') ||
@@ -570,20 +709,17 @@ double eval_comparison(const char *s) {
                 EvalResult lval = eval_typed_expr(trim(left));
                 EvalResult rval = eval_typed_expr(trim(right));
                 
-                // STRICT TYPE CHECKING for comparisons
                 if (lval.type != rval.type) {
                     error("cannot compare different types (number vs string)", NULL);
                 }
                 
                 if (lval.type == V_STR) {
-                    // String comparison
                     int cmp = strcmp(lval.str_val, rval.str_val);
                     if (!strcmp(op, "==")) return (cmp == 0) ? 1 : 0;
                     if (!strcmp(op, "!=")) return (cmp != 0) ? 1 : 0;
                     if (!strcmp(op, "<=")) return (cmp <= 0) ? 1 : 0;
                     if (!strcmp(op, ">=")) return (cmp >= 0) ? 1 : 0;
                 } else {
-                    // Numeric comparison
                     double a = lval.num_val;
                     double b = rval.num_val;
                     
@@ -607,18 +743,15 @@ double eval_comparison(const char *s) {
                 EvalResult lval = eval_typed_expr(trim(left));
                 EvalResult rval = eval_typed_expr(trim(right));
                 
-                // STRICT TYPE CHECKING for comparisons
                 if (lval.type != rval.type) {
                     error("cannot compare different types (number vs string)", NULL);
                 }
                 
                 if (lval.type == V_STR) {
-                    // String comparison
                     int cmp = strcmp(lval.str_val, rval.str_val);
                     if (op == '<') return (cmp < 0) ? 1 : 0;
                     if (op == '>') return (cmp > 0) ? 1 : 0;
                 } else {
-                    // Numeric comparison
                     double a = lval.num_val;
                     double b = rval.num_val;
                     
@@ -632,7 +765,6 @@ double eval_comparison(const char *s) {
     return eval_expr(str);
 }
 
-// LEVEL 2: eval_and — logical AND with short-circuit
 double eval_and(const char *s) {
     char buf[MAX_LINE];
     strcpy(buf, s);
@@ -641,8 +773,8 @@ double eval_and(const char *s) {
     int depth = 0;
     
     for (char *p = str; *p; p++) {
-        if (*p == '(') depth++;
-        else if (*p == ')') depth--;
+        if (*p == '(' || *p == '[') depth++;
+        else if (*p == ')' || *p == ']') depth--;
         else if (depth == 0 && p[0] == 'a' && p[1] == 'n' && p[2] == 'd' &&
                  (p[3] == ' ' || p[3] == '\t' || p[3] == '(' || p[3] == '\0')) {
             
@@ -662,7 +794,6 @@ double eval_and(const char *s) {
     return eval_comparison(str);
 }
 
-// LEVEL 1: eval_or — logical OR with short-circuit
 double eval_or(const char *s) {
     char buf[MAX_LINE];
     strcpy(buf, s);
@@ -671,8 +802,8 @@ double eval_or(const char *s) {
     int depth = 0;
     
     for (char *p = str; *p; p++) {
-        if (*p == '(') depth++;
-        else if (*p == ')') depth--;
+        if (*p == '(' || *p == '[') depth++;
+        else if (*p == ')' || *p == ']') depth--;
         else if (depth == 0 && p[0] == 'o' && p[1] == 'r' &&
                  (p[2] == ' ' || p[2] == '\t' || p[2] == '(' || p[2] == '\0')) {
             
@@ -692,7 +823,6 @@ double eval_or(const char *s) {
     return eval_and(str);
 }
 
-// LEVEL 0: eval_condition — entry point for all condition/expression evaluation
 double eval_condition(const char *s) {
     char buf[MAX_LINE];
     strcpy(buf, s);
@@ -740,7 +870,6 @@ void exec_while_loop(int i) {
     int block_start = i + 1;
     int block_end = find_block_end(i);
     
-    // Push loop scope
     push_scope(1);
     
     while (eval_condition(condition) != 0) {
@@ -790,10 +919,7 @@ void exec_while_loop(int i) {
         if (did_return || did_break) break;
     }
     
-    // Pop loop scope
     pop_scope();
-    
-    // Clear break flag (but not return)
     did_break = 0;
 }
 
@@ -844,7 +970,6 @@ void exec_for_loop(int i) {
     char *condition = cond_buf;
     char *step = step_buf;
     
-    // Push loop scope
     push_scope(1);
     
     if (*init != '\0') {
@@ -912,7 +1037,6 @@ void exec_for_loop(int i) {
             exec_statement(step_copy);
             if (did_return) break;
         } else if (did_continue && *step != '\0') {
-            // Execute step even on continue
             current_line = program[i].line_num;
             char step_copy[MAX_LINE];
             strcpy(step_copy, step);
@@ -921,9 +1045,7 @@ void exec_for_loop(int i) {
         }
     }
     
-    // Pop loop scope
     pop_scope();
-    
     did_break = 0;
 }
 
@@ -958,35 +1080,90 @@ void exec_for_in_range_loop(int i) {
     char *range_end = strchr(paren, ')');
     if (!range_end) error("unmatched parentheses in range()", NULL);
     
-    char range_arg[MAX_LINE];
-    strncpy(range_arg, paren + 1, range_end - paren - 1);
-    range_arg[range_end - paren - 1] = 0;
-    trim(range_arg);
+    char range_args[MAX_LINE];
+    strncpy(range_args, paren + 1, range_end - paren - 1);
+    range_args[range_end - paren - 1] = 0;
+    trim(range_args);
     
-    if (*range_arg == '\0')
-        error("range() requires an argument", NULL);
+    if (*range_args == '\0')
+        error("range() requires at least one argument", NULL);
     
     char *colon = range_end + 1;
     while (*colon == ' ' || *colon == '\t') colon++;
     if (*colon != ':')
         error("missing colon after for-in loop", NULL);
     
-    double n = eval_condition(range_arg);
-    if (n < 0) n = 0;
+    // Parse range arguments
+    double start_val = 0, stop_val = 0, step_val = 1;
+    int arg_count = 0;
+    char *args[3] = {NULL, NULL, NULL};
+    
+    // Split by commas
+    char *p = range_args;
+    int depth = 0;
+    char *arg_start = p;
+    
+    while (*p) {
+        if (*p == '(') depth++;
+        else if (*p == ')') depth--;
+        else if (*p == ',' && depth == 0) {
+            if (arg_count >= 3) error("range() takes at most 3 arguments", NULL);
+            
+            char arg[MAX_LINE];
+            strncpy(arg, arg_start, p - arg_start);
+            arg[p - arg_start] = 0;
+            
+            double val = eval_condition(trim(arg));
+            if (arg_count == 0) start_val = val;
+            else if (arg_count == 1) stop_val = val;
+            else if (arg_count == 2) step_val = val;
+            
+            arg_count++;
+            arg_start = p + 1;
+        }
+        p++;
+    }
+    
+    // Last argument
+    if (arg_count >= 3) error("range() takes at most 3 arguments", NULL);
+    
+    char arg[MAX_LINE];
+    strcpy(arg, arg_start);
+    double val = eval_condition(trim(arg));
+    
+    if (arg_count == 0) {
+        // range(n) -> start=0, stop=n, step=1
+        stop_val = val;
+        start_val = 0;
+        step_val = 1;
+    } else if (arg_count == 1) {
+        // range(start, stop) -> step=1
+        stop_val = val;
+        step_val = 1;
+    } else if (arg_count == 2) {
+        // range(start, stop, step)
+        step_val = val;
+    }
+    
+    if (step_val == 0) {
+        error("range() step cannot be zero", NULL);
+    }
     
     int block_start = i + 1;
     int block_end = find_block_end(i);
     
-    // Push loop scope
     push_scope(1);
     
-    for (double idx = 0; idx < n; idx += 1) {
+    double idx = start_val;
+    
+    while ((step_val > 0 && idx < stop_val) || (step_val < 0 && idx > stop_val)) {
         Var v = {0};
         strcpy(v.name, loop_var);
         v.type = V_NUM;
         v.num = idx;
         v.explicit = 0;
         v.is_const = 0;
+        v.is_array = 0;
         set_var(v);
         
         if (did_return) break;
@@ -1035,11 +1212,11 @@ void exec_for_in_range_loop(int i) {
         }
         
         if (did_return || did_break) break;
+        
+        idx += step_val;
     }
     
-    // Pop loop scope
     pop_scope();
-    
     did_break = 0;
 }
 
@@ -1165,13 +1342,13 @@ void exec_if_block(int i) {
 // ================= STATEMENT EXECUTION =================
 
 void exec_statement(char *t) {
+    
     if (!*t || *t == '#') return;
 
     if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4)) {
         return;
     }
 
-    // Handle 'break' statement
     if (!strcmp(t, "break")) {
         if (!inside_loop())
             error("'break' used outside of loop", NULL);
@@ -1179,12 +1356,30 @@ void exec_statement(char *t) {
         return;
     }
 
-    // Handle 'continue' statement
     if (!strcmp(t, "continue")) {
         if (!inside_loop())
             error("'continue' used outside of loop", NULL);
         did_continue = 1;
         return;
+    }
+
+    // Handle exit() builtin
+    if (!strncmp(t, "exit", 4) && t[4] == '(') {
+        char *rp = strrchr(t, ')');
+        if (!rp) error("unmatched parentheses in exit()", NULL);
+        
+        char arg[MAX_LINE];
+        strncpy(arg, t + 5, rp - t - 5);
+        arg[rp - t - 5] = 0;
+        trim(arg);
+        
+        int code = 0;
+        if (*arg != '\0') {
+            code = (int)eval_condition(arg);
+        }
+        
+        cleanup_all_arrays();
+        exit(code);
     }
 
     if (!strncmp(t, "while", 5) && (t[5] == ' ' || t[5] == '\t')) {
@@ -1240,16 +1435,12 @@ void exec_statement(char *t) {
         return;
     }
 
-    // Handle 'print()' function - NOW REQUIRES PARENTHESES
     if (!strncmp(t, "print", 5)) {
-        // Check what comes after 'print'
         if (t[5] == ' ' || t[5] == '\t') {
-            // Old syntax: print x
             error("print requires parentheses: use print(...)", NULL);
         }
         
         if (t[5] == '(') {
-            // New syntax: print(...)
             char *lp = t + 5;
             char *rp = strrchr(t, ')');
             if (!rp) error("unmatched parentheses in print()", NULL);
@@ -1258,18 +1449,19 @@ void exec_statement(char *t) {
             strncpy(args_str, lp + 1, rp - lp - 1);
             args_str[rp - lp - 1] = 0;
             
-            // Handle empty print() - prints blank line
             if (*trim(args_str) == '\0') {
                 printf("\n");
                 return;
             }
             
-            // Parse comma-separated arguments
             char *p = args_str;
             int first = 1;
             
             while (*p) {
-                // Find next comma (respecting parentheses and quotes)
+                // Skip leading whitespace
+                while (*p == ' ' || *p == '\t') p++;
+                if (!*p) break;
+                
                 int depth = 0;
                 int in_string = 0;
                 char *start = p;
@@ -1279,8 +1471,8 @@ void exec_statement(char *t) {
                         in_string = !in_string;
                     }
                     if (!in_string) {
-                        if (*p == '(') depth++;
-                        else if (*p == ')') depth--;
+                        if (*p == '(' || *p == '[') depth++;
+                        else if (*p == ')' || *p == ']') depth--;
                         else if (*p == ',' && depth == 0) break;
                     }
                     p++;
@@ -1289,19 +1481,75 @@ void exec_statement(char *t) {
                 char arg[MAX_LINE];
                 strncpy(arg, start, p - start);
                 arg[p - start] = 0;
-                trim(arg);
                 
-                // Print space between arguments
+                // Trim both leading and trailing whitespace
+                char *arg_trimmed = arg;
+                while (*arg_trimmed == ' ' || *arg_trimmed == '\t') arg_trimmed++;
+                char *end = arg_trimmed + strlen(arg_trimmed) - 1;
+                while (end >= arg_trimmed && (*end == ' ' || *end == '\t')) *end-- = 0;
+                
                 if (!first) printf(" ");
                 first = 0;
                 
-                // Check if it's a string literal
-                if (*arg == '"' && arg[strlen(arg) - 1] == '"') {
-                    arg[strlen(arg) - 1] = 0;
-                    printf("%s", arg + 1);
+                // Check for string/array indexing
+                char *bracket = strchr(arg_trimmed, '[');
+                if (bracket && !strchr(arg_trimmed, '(') && *arg_trimmed != '"') {
+                    char varname[64];
+                    strncpy(varname, arg_trimmed, bracket - arg_trimmed);
+                    varname[bracket - arg_trimmed] = 0;
+                    
+                    // Trim varname
+                    char *vn = varname;
+                    while (*vn == ' ' || *vn == '\t') vn++;
+                    if (vn != varname) memmove(varname, vn, strlen(vn) + 1);
+                    char *vn_end = varname + strlen(varname) - 1;
+                    while (vn_end >= varname && (*vn_end == ' ' || *vn_end == '\t')) *vn_end-- = 0;
+                    
+                    char *bracket_end = strchr(bracket, ']');
+                    if (bracket_end) {
+                        char index_expr[MAX_LINE];
+                        strncpy(index_expr, bracket + 1, bracket_end - bracket - 1);
+                        index_expr[bracket_end - bracket - 1] = 0;
+                        trim(index_expr);
+                        
+                        double idx = eval_condition(index_expr);
+                        if (idx != (int)idx) error("string/array index must be integer", NULL);
+                        int index = (int)idx;
+                        
+                        Var v;
+                        if (get_var(varname, &v)) {
+                            if (v.type == V_STR) {
+                                if (index < 0 || index >= (int)strlen(v.str)) {
+                                    error("string index out of bounds", varname);
+                                }
+                                printf("%c", v.str[index]);
+                            } else if (v.is_array && v.array_elem_type == V_STR) {
+                                if (index < 0 || index >= v.array_size) {
+                                    error("array index out of bounds", varname);
+                                }
+                                char **arr = (char**)v.array_data;
+                                printf("%s", arr[index]);
+                            } else if (v.is_array && v.array_elem_type == V_NUM) {
+                                if (index < 0 || index >= v.array_size) {
+                                    error("array index out of bounds", varname);
+                                }
+                                double *arr = (double*)v.array_data;
+                                printf("%g", arr[index]);
+                            }
+                        } else {
+                            error("undefined variable", varname);
+                        }
+                        
+                        if (*p == ',') p++;
+                        continue;
+                    }
+                }
+                
+                if (*arg_trimmed == '"' && arg_trimmed[strlen(arg_trimmed) - 1] == '"') {
+                    arg_trimmed[strlen(arg_trimmed) - 1] = 0;
+                    printf("%s", arg_trimmed + 1);
                 } else {
-                    // Evaluate as expression and check type
-                    EvalResult res = eval_typed_expr(arg);
+                    EvalResult res = eval_typed_expr(arg_trimmed);
                     if (res.type == V_STR) {
                         printf("%s", res.str_val);
                     } else {
@@ -1317,25 +1565,20 @@ void exec_statement(char *t) {
         }
         
         if (t[5] == '\0') {
-            // Just "print" with nothing after
             error("print requires parentheses: use print(...)", NULL);
         }
     }
 
-    // Handle variable declaration with type or const
-    // Patterns: int x = ..., double x = ..., string x = ..., const x = ..., const int x = ...
     int is_const = 0;
     int is_typed = 0;
     ValType declared_type = V_NUM;
     char *decl_start = t;
     
-    // Check for 'const'
     if (!strncmp(t, "const", 5) && (t[5] == ' ' || t[5] == '\t')) {
         is_const = 1;
         decl_start = trim(t + 5);
     }
     
-    // Check for type
     if (!strncmp(decl_start, "int", 3) && (decl_start[3] == ' ' || decl_start[3] == '\t')) {
         is_typed = 1;
         declared_type = V_NUM;
@@ -1350,7 +1593,260 @@ void exec_statement(char *t) {
         decl_start = trim(decl_start + 6);
     }
     
-    // Handle assignment (including typed/const declarations)
+    
+    // Check for array declaration: type name[size] or type name[size] = [...]
+    char *array_bracket = strchr(decl_start, '[');
+    if (array_bracket && is_typed) {
+        char *array_bracket_end = strchr(array_bracket, ']');
+        if (!array_bracket_end) error("unmatched brackets in array declaration", NULL);
+        
+        char varname[64];
+        strncpy(varname, decl_start, array_bracket - decl_start);
+        varname[array_bracket - decl_start] = 0;
+        
+        // Trim varname - do this properly
+        char *vn_start = varname;
+        while (*vn_start == ' ' || *vn_start == '\t') vn_start++;
+        if (vn_start != varname) memmove(varname, vn_start, strlen(vn_start) + 1);
+        char *vn_end = varname + strlen(varname) - 1;
+        while (vn_end >= varname && (*vn_end == ' ' || *vn_end == '\t')) *vn_end-- = 0;
+        
+        
+        char size_expr[MAX_LINE];
+        strncpy(size_expr, array_bracket + 1, array_bracket_end - array_bracket - 1);
+        size_expr[array_bracket_end - array_bracket - 1] = 0;
+        
+        // Trim size_expr properly
+        char *se_start = size_expr;
+        while (*se_start == ' ' || *se_start == '\t') se_start++;
+        if (se_start != size_expr) memmove(size_expr, se_start, strlen(se_start) + 1);
+        char *se_end = size_expr + strlen(size_expr) - 1;
+        while (se_end >= size_expr && (*se_end == ' ' || *se_end == '\t')) *se_end-- = 0;
+        
+        
+        double size_val = eval_condition(size_expr);
+        if (size_val != (int)size_val || size_val <= 0) {
+            error("array size must be positive integer", varname);
+        }
+        if (size_val > MAX_ARRAY_SIZE) {
+            error("array size too large", varname);
+        }
+        
+        int array_size = (int)size_val;
+        
+        Var v = {0};
+        strcpy(v.name, varname);
+        v.is_array = 1;
+        v.array_size = array_size;
+        v.array_elem_type = declared_type;
+        v.is_const = is_const;
+        v.explicit = is_typed;
+        v.type = V_ARRAY;
+        
+        // Check for initialization
+        char *eq = strchr(array_bracket_end, '=');
+        if (eq && eq[1] != '=') {
+            char *init_start = trim(eq + 1);
+            
+            if (*init_start != '[') {
+                error("array initialization requires [...] syntax", varname);
+            }
+            
+            char *init_end = strchr(init_start, ']');
+            if (!init_end) error("unmatched brackets in array initialization", varname);
+            
+            char init_expr[MAX_LINE];
+            strncpy(init_expr, init_start + 1, init_end - init_start - 1);
+            init_expr[init_end - init_start - 1] = 0;
+            
+            // Parse initialization list
+            if (declared_type == V_NUM) {
+                double *arr = (double*)malloc(array_size * sizeof(double));
+                for (int i = 0; i < array_size; i++) arr[i] = 0;
+                
+                char *p = init_expr;
+                int idx = 0;
+                
+                while (*p && idx < array_size) {
+                    int depth = 0;
+                    char *start = p;
+                    
+                    while (*p && !(*p == ',' && depth == 0)) {
+                        if (*p == '(') depth++;
+                        else if (*p == ')') depth--;
+                        p++;
+                    }
+                    
+                    char elem[MAX_LINE];
+                    strncpy(elem, start, p - start);
+                    elem[p - start] = 0;
+                    
+                    // Trim properly
+                    char *e = elem;
+                    while (*e == ' ' || *e == '\t') e++;
+                    char *e_end = e + strlen(e) - 1;
+                    while (e_end >= e && (*e_end == ' ' || *e_end == '\t')) *e_end-- = 0;
+                    
+                    if (*e != '\0') {
+                        arr[idx++] = eval_condition(e);
+                    }
+                    
+                    if (*p == ',') p++;
+                }
+                
+                v.array_data = arr;
+            } else {
+                char **arr = (char**)malloc(array_size * sizeof(char*));
+                for (int i = 0; i < array_size; i++) arr[i] = NULL;
+                
+                char *p = init_expr;
+                int idx = 0;
+                int in_string = 0;
+                char *start = p;
+                
+                while (*p && idx < array_size) {
+                    if (*p == '"' && (p == init_expr || p[-1] != '\\')) {
+                        in_string = !in_string;
+                    }
+                    
+                    if (!in_string && *p == ',') {
+                        char elem[MAX_LINE];
+                        strncpy(elem, start, p - start);
+                        elem[p - start] = 0;
+                        
+                        // Trim properly
+                        char *e = elem;
+                        while (*e == ' ' || *e == '\t') e++;
+                        char *e_end = e + strlen(e) - 1;
+                        while (e_end >= e && (*e_end == ' ' || *e_end == '\t')) *e_end-- = 0;
+                        
+                        if (*e == '"' && e[strlen(e) - 1] == '"') {
+                            e[strlen(e) - 1] = 0;
+                            arr[idx++] = strdup(e + 1);
+                        } else if (*e != '\0') {
+                            error("string array requires string literals", varname);
+                        }
+                        
+                        p++;
+                        start = p;
+                    } else {
+                        p++;
+                    }
+                }
+                
+                // Last element
+                char elem[MAX_LINE];
+                strcpy(elem, start);
+                
+                // Trim properly
+                char *e = elem;
+                while (*e == ' ' || *e == '\t') e++;
+                char *e_end = e + strlen(e) - 1;
+                while (e_end >= e && (*e_end == ' ' || *e_end == '\t')) *e_end-- = 0;
+                
+                if (*e == '"' && e[strlen(e) - 1] == '"') {
+                    e[strlen(e) - 1] = 0;
+                    arr[idx++] = strdup(e + 1);
+                } else if (*e != '\0') {
+                    error("string array requires string literals", varname);
+                }
+                
+                v.array_data = arr;
+            }
+        } else {
+            // No initialization - allocate zeroed array
+            if (declared_type == V_NUM) {
+                double *arr = (double*)calloc(array_size, sizeof(double));
+                v.array_data = arr;
+            } else {
+                char **arr = (char**)calloc(array_size, sizeof(char*));
+                v.array_data = arr;
+            }
+        }
+        
+        set_var(v);
+        return;
+    }
+    
+    // Handle array element assignment: arr[idx] = value (check BEFORE regular assignment!)
+    if (!is_typed) {
+        char *bracket = strchr(decl_start, '[');
+        if (bracket) {
+            char *eq = strchr(bracket, '=');
+            if (eq && eq[1] != '=' && eq[-1] != '=' && eq[-1] != '!' && 
+                eq[-1] != '<' && eq[-1] != '>') {
+                
+                char varname[64];
+                strncpy(varname, decl_start, bracket - decl_start);
+                varname[bracket - decl_start] = 0;
+                
+                // Trim varname properly
+                char *vn_start = varname;
+                while (*vn_start == ' ' || *vn_start == '\t') vn_start++;
+                if (vn_start != varname) memmove(varname, vn_start, strlen(vn_start) + 1);
+                char *vn_end = varname + strlen(varname) - 1;
+                while (vn_end >= varname && (*vn_end == ' ' || *vn_end == '\t')) *vn_end-- = 0;
+                
+                char *bracket_end = strchr(bracket, ']');
+                if (!bracket_end) error("unmatched brackets", NULL);
+                
+                char index_expr[MAX_LINE];
+                strncpy(index_expr, bracket + 1, bracket_end - bracket - 1);
+                index_expr[bracket_end - bracket - 1] = 0;
+                
+                // Trim index_expr properly
+                char *ie_start = index_expr;
+                while (*ie_start == ' ' || *ie_start == '\t') ie_start++;
+                if (ie_start != index_expr) memmove(index_expr, ie_start, strlen(ie_start) + 1);
+                char *ie_end = index_expr + strlen(index_expr) - 1;
+                while (ie_end >= index_expr && (*ie_end == ' ' || *ie_end == '\t')) *ie_end-- = 0;
+                
+                double idx = eval_condition(index_expr);
+                if (idx != (int)idx) error("array index must be integer", NULL);
+                int index = (int)idx;
+                
+                char *rhs = eq + 1;
+                while (*rhs == ' ' || *rhs == '\t') rhs++;
+                
+                Var v;
+                if (!get_var(varname, &v)) {
+                    error("undefined variable", varname);
+                }
+                
+                if (v.is_const) {
+                    error("cannot modify const array", varname);
+                }
+                
+                if (!v.is_array) {
+                    error("indexing requires array", varname);
+                }
+                
+                if (index < 0 || index >= v.array_size) {
+                    error("array index out of bounds", varname);
+                }
+                
+                if (v.array_elem_type == V_NUM) {
+                    double val = eval_condition(rhs);
+                    double *arr = (double*)v.array_data;
+                    arr[index] = val;
+                } else {
+                    // String array element
+                    if (*rhs == '"' && rhs[strlen(rhs) - 1] == '"') {
+                        char **arr = (char**)v.array_data;
+                        if (arr[index]) free(arr[index]);
+                        
+                        rhs[strlen(rhs) - 1] = 0;
+                        arr[index] = strdup(rhs + 1);
+                    } else {
+                        error("string array requires string literal", varname);
+                    }
+                }
+                
+                return;
+            }
+        }
+    }
+    
     char *eq = strchr(decl_start, '=');
     if (eq && eq > decl_start) {
         if (eq[-1] == '=' || eq[-1] == '!' || eq[-1] == '<' || eq[-1] == '>') {
@@ -1368,7 +1864,6 @@ void exec_statement(char *t) {
             error("empty right-hand side in assignment", lhs);
         }
         
-        // Const variables must be initialized
         if (is_const && !get_var(lhs, &(Var){0})) {
             // New const variable - OK
         }
@@ -1385,11 +1880,10 @@ void exec_statement(char *t) {
         strcpy(v.name, lhs);
         v.is_const = is_const;
         v.explicit = is_typed;
+        v.is_array = 0;
 
-        // Check if RHS is a pure string literal (not an expression with strings)
         int is_string_literal = 0;
         if (*rhs == '"') {
-            // Count unescaped quotes
             int quote_count = 0;
             int escaped = 0;
             for (char *p = rhs; *p; p++) {
@@ -1402,7 +1896,6 @@ void exec_statement(char *t) {
                 }
                 escaped = 0;
             }
-            // Pure literal if exactly 2 quotes and ends with quote
             if (quote_count == 2 && rhs[strlen(rhs) - 1] == '"') {
                 is_string_literal = 1;
             }
@@ -1427,12 +1920,10 @@ void exec_statement(char *t) {
         return;
     }
     
-    // Check for const without initialization
     if (is_const) {
         error("const variable must be initialized", NULL);
     }
 
-    // Handle function call
     char *lp = strchr(t, '(');
     if (lp) {
         char fname[64];
@@ -1507,7 +1998,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Store filename for __file__ introspection
     strncpy(current_filename, argv[1], sizeof(current_filename) - 1);
     current_filename[sizeof(current_filename) - 1] = 0;
 
@@ -1565,5 +2055,7 @@ int main(int argc, char **argv) {
         
         exec_statement(stmt);
     }
+    
+    cleanup_all_arrays();
     return 0;
 }
