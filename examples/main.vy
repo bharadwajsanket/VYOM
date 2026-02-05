@@ -1,10 +1,10 @@
 # ======================================================
-# 🌌 Vyom v0.7 — Official Progressive Demo
-# Covers: variables, functions, logic, control flow, loops
+# 🌌 Vyom v0.8 — Official Progressive Demo
+# Covers: core language + fixed arrays + string indexing
 # ======================================================
 
 print("==============================================")
-print("  Vyom v0.7 — Progressive Language Demo")
+print("  Vyom v0.8 — Progressive Language Demo")
 print("==============================================")
 print()
 
@@ -173,85 +173,70 @@ print("Sum =", total)
 print()
 
 # ------------------------------------------------------
-# 1️⃣4️⃣ Range-based for loop
+# 1️⃣4️⃣ Range-based for loop (v0.8 supports step)
 # ------------------------------------------------------
-print("▶ Range-based loop (0 to 2)")
+print("▶ Range-based loop with step")
 
-for k in range(3):
+for k in range(0, 6, 2):
     print(k)
 print()
 
 # ------------------------------------------------------
-# 1️⃣5️⃣ Nested loops
+# 1️⃣5️⃣ Fixed-size numeric arrays (NEW in v0.8)
 # ------------------------------------------------------
-print("▶ Nested loops (2 x 3)")
+print("▶ Fixed-size numeric arrays")
 
-for outer in range(2):
-    for inner in range(3):
-        print("value =", outer * 3 + inner)
+int nums[5] = [1, 2, 3, 4, 5]
+
+print("nums[0] =", nums[0])
+print("nums[4] =", nums[4])
+print("len(nums) =", len(nums))
+
+nums[2] = 99
+print("nums[2] after update =", nums[2])
 print()
 
 # ------------------------------------------------------
-# 1️⃣6️⃣ Conditional inside loop
+# 1️⃣6️⃣ String arrays
 # ------------------------------------------------------
-print("▶ Conditional inside loop")
+print("▶ String arrays")
 
-for num in range(10):
-    if num == 5:
-        print("Found:", num)
+string names[3] = ["Sanket", "Vyom", "Lang"]
+
+print("names[0] =", names[0])
+print("names[1] =", names[1])
+print("len(names) =", len(names))
 print()
 
 # ------------------------------------------------------
-# 1️⃣7️⃣ Loop inside function
+# 1️⃣7️⃣ String indexing (read-only)
 # ------------------------------------------------------
-print("▶ Loop inside function")
+print("▶ String indexing")
 
-def sum_range(n):
-    result = 0
-    for (idx = 1; idx <= n; idx = idx + 1):
-        result = result + idx
-    return result
-
-print("sum_range(10) =", sum_range(10))
+word = "Vyom"
+print("word =", word)
+print("word[0] =", word[0])
+print("word[1] =", word[1])
+print("len(word) =", len(word))
 print()
 
 # ------------------------------------------------------
-# 1️⃣8️⃣ Factorial using loop
+# 1️⃣8️⃣ Array + loop together
 # ------------------------------------------------------
-print("▶ Factorial using loop")
+print("▶ Looping over array indices")
 
-def factorial(n):
-    product = 1
-    for (i = 1; i <= n; i = i + 1):
-        product = product * i
-    return product
+int squares[5]
 
-print("factorial(5) =", factorial(5))
-print()
+for idx in range(len(squares)):
+    squares[idx] = idx * idx
 
-# ------------------------------------------------------
-# 1️⃣9️⃣ Fibonacci using while loop
-# ------------------------------------------------------
-print("▶ Fibonacci using while loop")
-
-def fibonacci(n):
-    a = 0
-    b = 1
-    count = 0
-    while (count < n):
-        temp = a + b
-        a = b
-        b = temp
-        count = count + 1
-    return a
-
-print("fibonacci(8) =", fibonacci(8))
+for idx in range(len(squares)):
+    print("squares[", idx, "] =", squares[idx])
 print()
 
 # ------------------------------------------------------
 # 🔚 End
 # ------------------------------------------------------
 print("==============================================")
-print("  End of Vyom v0.7 Demo")
+print("  End of Vyom v0.8 Demo")
 print("==============================================")
-print(999)
