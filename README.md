@@ -28,13 +28,13 @@ If you cannot trace execution line-by-line through the source, the design is wro
 
 ## Status
 
-**Current Release:** v0.8.0 — *Strict Core + Fixed Arrays*
+**Current Release:** v0.9.0 — *2D Arrays & Multi-Dimensional Data*
 
 ```
 Language:     Vyom
-Version:      0.8.0
+Version:      0.9.0
 License:      MIT
-Interpreter:  ~2000 lines of C
+Interpreter:  ~2500 lines of C
 Dependencies: None (libc only)
 Platform:     POSIX-compliant systems, Windows
 ```
@@ -42,6 +42,12 @@ Platform:     POSIX-compliant systems, Windows
 ---
 
 ## Features
+
+### Implemented in v0.9
+- **2D Fixed-size arrays** (`int a[rows][cols]`)
+- 2D array element access and assignment
+- Enhanced `len()` for 2D arrays (rows/columns)
+- Partial initialization with zero-fill
 
 ### Implemented in v0.8
 - Lexically scoped variables
@@ -115,7 +121,7 @@ To proceed:
 
 ---
 
-###  macOS / 🐧 Linux
+###  macOS / 🐧 Linux
 
 Build from source:
 ```bash
@@ -155,6 +161,33 @@ Vyom
 
 ---
 
+## 📦 2D Arrays (v0.9)
+
+Create matrices and grids with fixed-size 2D arrays:
+
+```vy
+# Declaration
+int matrix[3][4]
+
+# Initialization
+int grid[2][3] = [[1, 2, 3], [4, 5, 6]]
+
+# Access and assignment
+matrix[0][0] = 100
+print(grid[1][2])   # 6
+
+# Dimensions
+print(len(grid))      # 2 (rows)
+print(len(grid[0]))   # 3 (cols)
+
+# Iteration
+for row in range(len(grid)):
+    for col in range(len(grid[0])):
+        print(grid[row][col])
+```
+
+---
+
 ## Philosophy
 
 Vyom is designed to be **readable**, **predictable**, and **honest** in execution.
@@ -166,11 +199,3 @@ Vyom is designed to be **readable**, **predictable**, and **honest** in executio
 The code you write is the code that runs.
 
 **Build with clarity. Execute with transparency.**
-<<<<<<< Updated upstream
-
-=======
-<<<<<<< HEAD
-=======
-
->>>>>>> 85c8d09 (docs(v0.8): update README, roadmap, syntax guide and story)
->>>>>>> Stashed changes

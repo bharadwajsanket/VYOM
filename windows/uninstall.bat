@@ -1,96 +1,114 @@
 @echo off
-title Vyom Uninstaller v0.7
+setlocal EnableDelayedExpansion
+title Vyom Uninstaller v0.9
 color 0C
-setlocal
 
 :: =====================================================
-:: Vyom Uninstaller v0.7
+:: VYOM UNINSTALLER v0.9
 :: =====================================================
 
+:header
 cls
 echo.
-echo =====================================================
-echo   VYOM PROGRAMMING LANGUAGE
+echo   [91m__      __     _  _     ______     __  __  [0m
+echo   [91m\ \    / /    ( \/ )   / ____ \   |  \/  | [0m
+echo   [91m \ \  / /      \  /   | |    | |  | \  / | [0m
+echo   [91m  \ \/ /        \/    | |    | |  | |\/| | [0m
+echo   [91m   \  /         ||    | |____| |  | |  | | [0m
+echo   [91m    \/          ()     \______/   |_|  |_| [0m
 echo.
-echo   v0.7 — Uninstaller
-echo   Clean • Explicit • No Leftovers
+echo   [97m   VYOM UNINSTALLER [0m
+echo   [90m   Clean Removal • No Leftovers [0m
 echo.
-echo   Created by Sanket Bharadwaj
-echo =====================================================
+echo   [90m============================================= [0m
 echo.
 
 :: ---------------- CONFIRM ----------------
-color 0E
-choice /C YN /M "Are you sure you want to uninstall Vyom?"
-if errorlevel 2 (
-    echo.
-    echo Uninstallation cancelled.
-    pause
-    goto :end
-)
-color 0C
+echo   [93m[?] Are you sure you want to uninstall Vyom? [0m
+echo      This will remove Vyom v0.9 and all examples.
+echo.
+set /p "confirm=      Type Y to continue: "
+if /i not "%confirm%"=="Y" goto :eof
 
-:: ---------------- PATH ----------------
-set INSTALL_DIR=C:\Vyom
+echo.
+echo   [97mUninstalling... [0m
+echo.
 
-:: ---------------- STEP 1 ----------------
-echo [1/4] Checking installation...
+:: ---------------- PATHS ----------------
+set "INSTALL_DIR=C:\Vyom"
+
+:: Step 1: Check Install
+call :progress 10 "Checking installation..."
 if not exist "%INSTALL_DIR%" (
-    echo     Vyom is not installed
+    timeout /t 1 /nobreak >nul
+    echo   [93mVyom is not installed at %INSTALL_DIR% [0m
+    timeout /t 2 /nobreak >nul
     goto :cleanup_path
 )
-echo     Installation found
-echo.
+timeout /t 1 /nobreak >nul
 
-:: ---------------- STEP 2 ----------------
-echo [2/4] Removing files...
+:: Step 2: Remove Files
+call :progress 40 "Removing files..."
 if exist "%INSTALL_DIR%\vyom.exe" del /Q "%INSTALL_DIR%\vyom.exe" >nul 2>&1
 if exist "%INSTALL_DIR%\examples" rmdir /S /Q "%INSTALL_DIR%\examples" >nul 2>&1
+timeout /t 1 /nobreak >nul
+
+call :progress 60 "Removing directories..."
 rmdir /S /Q "%INSTALL_DIR%" >nul 2>&1
-echo     Files removed
-echo.
+timeout /t 1 /nobreak >nul
 
 :cleanup_path
-:: ---------------- STEP 3 ----------------
-echo [3/4] Cleaning PATH...
+:: Step 3: Clean PATH
+call :progress 80 "Cleaning System PATH..."
 echo %PATH% | find /i "%INSTALL_DIR%" >nul
 if %errorlevel% equ 0 (
     powershell -Command ^
     "$p=[Environment]::GetEnvironmentVariable('Path','User'); ^
      $n=($p.Split(';') | Where-Object { $_ -ne 'C:\Vyom' }) -join ';'; ^
      [Environment]::SetEnvironmentVariable('Path',$n,'User')" >nul 2>&1
-    echo     PATH cleaned
-) else (
-    echo     Vyom not found in PATH
 )
+timeout /t 1 /nobreak >nul
+
+call :progress 100 "Uninstallation Complete"
+echo.
 echo.
 
-:: ---------------- STEP 4 ----------------
-echo [4/4] Finalizing...
+:: ---------------- SUCCESS ----------------
+echo   [92mSUCCESS! [0m Vyom has been removed from your system.
 echo.
-
-:: ---------------- DONE ----------------
-color 0A
-echo =====================================================
-echo   Vyom v0.7 Uninstalled Successfully
-echo =====================================================
+echo   [90m--------------------------------------------- [0m
+echo   [97mRemoved Items: [0m
+echo     - Installation Directory (C:\Vyom)
+echo     - Environment Variable (PATH)
+echo     - Example Files
+echo   [90m--------------------------------------------- [0m
 echo.
-echo   Removed:
-echo     - C:\Vyom directory
-echo     - vyom.exe
-echo     - examples
-echo     - PATH entry
+echo   [97mThank you for using Vyom. [0m
 echo.
-echo   IMPORTANT:
-echo   - Close this terminal
-echo   - Open a NEW terminal
-echo.
-echo   Verify:
-echo     vyom --version
-echo     (should say command not found)
-echo.
-echo =====================================================
+echo   [90m============================================= [0m
 pause
+goto :eof
 
-:end
-endlocal
+
+:: =====================================================
+:: PROGRESS BAR FUNCTION
+:: =====================================================
+:progress
+set "percent=%~1"
+set "message=%~2"
+
+rem Calculate number of bars (20 chars total width)
+set /a "bars=%percent% / 5"
+set "progressbar="
+
+rem Build bar string
+if %bars% gtr 0 (
+    for /l %%i in (1,1,%bars%) do set "progressbar=!progressbar!█"
+)
+set /a "spaces=20-%bars%"
+if %spaces% gtr 0 (
+    for /l %%i in (1,1,%spaces%) do set "progressbar=!progressbar!░"
+)
+
+echo  [%progressbar%] %percent%%% - %message%
+exit /b

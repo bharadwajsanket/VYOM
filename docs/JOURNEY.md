@@ -1,15 +1,15 @@
-# 🌌 Vyom — A Story (v0.1 → v0.8)
+# 🌌 Vyom — A Story (v0.1 → v0.9)
 
 This is not documentation.  
 This is not a changelog.
 
 This is a **story**.
 
-Vyom didn’t start as a programming language.  
+Vyom didn't start as a programming language.  
 It started as a feeling.
 
-> “Easy likhne me ho,  
-> par andar se real ho.”
+> "Easy likhne me ho,  
+> par andar se real ho."
 
 No buzzwords.  
 No trends.  
@@ -35,7 +35,7 @@ No rules.
 
 Bas ek sawaal:
 
-**“Kya main kuch yaad rakh sakta hoon?”**
+**"Kya main kuch yaad rakh sakta hoon?"**
 
 Aur jab us value ko print kiya —  
 screen pe number aaya.
@@ -133,8 +133,8 @@ Par important tha.
 
 Vyom ne yahin decide kiya:
 
-> “Main fast nahi banunga.  
-> Main correct banunga.”
+> "Main fast nahi banunga.  
+> Main correct banunga."
 
 ---
 
@@ -172,6 +172,52 @@ Yahin Vyom ne apni philosophy **prove** ki:
 
 > Power sirf tab allowed hai  
 > jab control guaranteed ho.
+
+---
+
+## 📐 v0.9 — Jab Dimensions Badhe
+
+Ek naya challenge:  
+2D arrays.
+
+Matrices.  
+Grids.  
+Tables.
+
+```vy
+int matrix[3][4]
+int grid[2][3] = [[1, 2, 3], [4, 5, 6]]
+```
+
+Simple syntax.  
+Complex capability.
+
+Par rules wahi rahe:
+
+- Fixed size at declaration  
+- Bounds checked always  
+- Zero-fill for partial init  
+- Row-major memory  
+
+`len(a)` gives rows.  
+`len(a[0])` gives columns.
+
+No magic. No guessing.
+
+Nested loops:
+
+```vy
+for row in range(len(grid)):
+    for col in range(len(grid[0])):
+        print(grid[row][col])
+```
+
+Vyom ab 2D soch sakta tha.  
+Par 2D me bhi —  
+discipline wahi tha.
+
+> Jitni dimensions badhengi,  
+> utni responsibility badhegi.
 
 ---
 

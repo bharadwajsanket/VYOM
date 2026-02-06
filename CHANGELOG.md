@@ -1,7 +1,98 @@
 # 📜 Vyom — Changelog
 
 All notable changes to the **Vyom Programming Language** are documented here.
-This file reflects the complete evolution from **v0.1 → v0.8**.
+This file reflects the complete evolution from **v0.1 → v0.9**.
+
+---
+
+# 🚀 v0.9 — 2D Arrays & Multi-Dimensional Data
+
+## Summary
+
+Vyom v0.9 extends the array system with **fixed-size 2D arrays**, enabling grid-based data structures and matrix operations while maintaining the language's commitment to explicit, bounds-checked semantics.
+
+No v0.8 behavior was removed. All existing programs continue to run unchanged.
+
+---
+
+## ✨ New Features
+
+### 1. Fixed-Size 2D Arrays
+
+- Supported element types: `int` (numeric only for 2D)
+- Size decided at declaration time: `int a[rows][cols]`
+- Row-major contiguous memory layout
+- No resizing, no dynamic growth
+- Mandatory bounds checking on every access
+
+```vy
+int matrix[3][4]
+int grid[2][3] = [[1, 2, 3], [4, 5, 6]]
+```
+
+---
+
+### 2. 2D Array Element Access
+
+```vy
+print(grid[0][0])   # 1
+print(grid[1][2])   # 6
+```
+
+- Both indices must be integers
+- Out-of-bounds → runtime error
+- Access pattern: `array[row][col]`
+
+---
+
+### 3. 2D Array Element Assignment
+
+```vy
+matrix[0][0] = 100
+matrix[1][2] = 42
+```
+
+- Index must be integer
+- Out-of-bounds → runtime error
+- `const` arrays are immutable
+
+---
+
+### 4. Enhanced `len()` for 2D Arrays
+
+```vy
+int a[3][4]
+len(a)      # 3 (number of rows)
+len(a[0])   # 4 (number of columns)
+```
+
+- `len(array)` returns row count
+- `len(array[i])` returns column count
+- Enables dynamic nested loop iteration
+
+---
+
+### 5. Partial Initialization with Zero-Fill
+
+```vy
+int c[3][3] = [[1, 2], [5]]
+# c[0] = [1, 2, 0]
+# c[1] = [5, 0, 0]
+# c[2] = [0, 0, 0]
+```
+
+- Missing elements are zero-filled
+- Missing rows are zero-filled
+- Explicit over implicit
+
+---
+
+## 🔒 Stability Guarantee
+
+- No v0.8 behavior was removed
+- No syntax changes outside listed features
+- No implicit behavior added
+- No dynamic memory features exposed
 
 ---
 

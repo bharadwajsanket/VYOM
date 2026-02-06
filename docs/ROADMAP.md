@@ -127,7 +127,23 @@ not aspirational promises.
 
 ---
 
-## 🔮 v0.9 — File I/O & Environment (Planned)
+## ✅ v0.9 — 2D Arrays & Multi-Dimensional Data (Released)
+
+**Focus:** structured grid-based data
+
+- Fixed-size 2D arrays (`int a[rows][cols]`)
+- 2D array initialization with nested brackets
+- Element access and assignment (`a[row][col]`)
+- Enhanced `len()` for 2D: rows (`len(a)`) and columns (`len(a[0])`)
+- Partial initialization with automatic zero-fill
+- Row-major contiguous memory layout
+- Mandatory bounds checking on both dimensions
+
+> Matrices and grids, with the same discipline as 1D arrays.
+
+---
+
+## 🔮 v0.10 — File I/O & Environment (Planned)
 
 **Focus:** controlled interaction with the outside world
 

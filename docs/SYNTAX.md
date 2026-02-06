@@ -1,9 +1,9 @@
-# 🌌 Vyom — Language Syntax Guide (v0.8)
+# 🌌 Vyom — Language Syntax Guide (v0.9)
 
 Vyom is a small, indentation-based scripting language written in C.  
 It is designed to be **explicit, predictable, and easy to reason about**.
 
-This document describes the **exact syntax supported in Vyom v0.8**.
+This document describes the **exact syntax supported in Vyom v0.9**.
 
 ---
 
@@ -91,7 +91,7 @@ Rules:
 
 ---
 
-## 📦 Arrays (v0.8)
+## 📦 1D Arrays (v0.8)
 
 ### Declaration
 
@@ -130,11 +130,79 @@ Rules:
 
 ---
 
-## 📏 len() Built-in (v0.8)
+## 📐 2D Arrays (v0.9)
+
+### Declaration
 
 ```vy
-len(a)
-len(s)
+int matrix[3][4]
+```
+
+Rules:
+- 2D arrays support **numeric types only** (`int`)
+- Size is fixed at declaration: `[rows][cols]`
+- Row-major contiguous memory layout
+- No resizing, no dynamic growth
+
+### Initialization
+
+```vy
+int grid[2][3] = [[1, 2, 3], [4, 5, 6]]
+```
+
+Rules:
+- Outer array contains rows
+- Each row is an inner array
+- Missing elements are **zero-filled**
+- Missing rows are **zero-filled**
+
+### Partial Initialization
+
+```vy
+int c[3][3] = [[1, 2], [5]]
+# Result:
+# c[0] = [1, 2, 0]
+# c[1] = [5, 0, 0]
+# c[2] = [0, 0, 0]
+```
+
+### 2D Array Access & Assignment
+
+```vy
+grid[0][0] = 100
+print(grid[1][2])
+```
+
+Rules:
+- Access pattern: `array[row][col]`
+- Both indices must be integers
+- Bounds checking is mandatory
+- Out-of-bounds → runtime error
+
+### 2D Array Dimensions
+
+```vy
+int a[3][4]
+len(a)      # 3 (number of rows)
+len(a[0])   # 4 (number of columns)
+```
+
+### Nested Loop Iteration
+
+```vy
+for row in range(len(grid)):
+    for col in range(len(grid[0])):
+        print(grid[row][col])
+```
+
+---
+
+## 📏 len() Built-in
+
+```vy
+len(a)      # array: returns size (1D) or rows (2D)
+len(a[0])   # 2D array: returns columns
+len(s)      # string: returns character count
 ```
 
 Rules:
@@ -248,9 +316,10 @@ exit(1)
 
 ---
 
-## ❌ Not Supported in v0.8
+## ❌ Not Supported in v0.9
 
 - Dynamic arrays
+- 2D string arrays (only numeric 2D supported)
 - Dictionaries
 - Garbage collection
 - Exceptions

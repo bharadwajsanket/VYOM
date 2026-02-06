@@ -1,10 +1,10 @@
 # ======================================================
-# 🌌 Vyom v0.8 — Official Progressive Demo
-# Covers: core language + fixed arrays + string indexing
+# 🌌 Vyom v0.9 — Official Progressive Demo
+# Covers: core language + fixed arrays + string indexing + 2D arrays
 # ======================================================
 
 print("==============================================")
-print("  Vyom v0.8 — Progressive Language Demo")
+print("  Vyom v0.9 — Progressive Language Demo")
 print("==============================================")
 print()
 
@@ -45,8 +45,8 @@ print()
 # ------------------------------------------------------
 print("▶ Function with parameters")
 
-def show(v):
-    print("Value:", v)
+def show(val):
+    print("Value:", val)
 
 show(42)
 show(99)
@@ -72,10 +72,10 @@ print()
 # ------------------------------------------------------
 print("▶ Function return value")
 
-def add(a, b):
-    return a + b
+def add_nums(p, q):
+    return p + q
 
-print("add(3, 4) =", add(3, 4))
+print("add_nums(3, 4) =", add_nums(3, 4))
 print()
 
 # ------------------------------------------------------
@@ -86,8 +86,8 @@ print("▶ Nested function calls")
 def square(n):
     return n * n
 
-def sum_of_squares(a, b):
-    return square(a) + square(b)
+def sum_of_squares(p, q):
+    return square(p) + square(q)
 
 print("sum_of_squares(3, 4) =", sum_of_squares(3, 4))
 print()
@@ -97,12 +97,12 @@ print()
 # ------------------------------------------------------
 print("▶ Comparisons")
 
-a = 10
-b = 20
+num1 = 10
+num2 = 20
 
-print("a < b  =", a < b)
-print("a == b =", a == b)
-print("a != b =", a != b)
+print("num1 < num2  =", num1 < num2)
+print("num1 == num2 =", num1 == num2)
+print("num1 != num2 =", num1 != num2)
 print()
 
 # ------------------------------------------------------
@@ -110,9 +110,9 @@ print()
 # ------------------------------------------------------
 print("▶ Logical operators")
 
-print("a < b and b > 15 =", a < b and b > 15)
-print("a > b or b == 20 =", a > b or b == 20)
-print("not (a == b)     =", not (a == b))
+print("num1 < num2 and num2 > 15 =", num1 < num2 and num2 > 15)
+print("num1 > num2 or num2 == 20 =", num1 > num2 or num2 == 20)
+print("not (num1 == num2)        =", not (num1 == num2))
 print()
 
 # ------------------------------------------------------
@@ -125,10 +125,14 @@ print("Score =", score)
 
 if score >= 90:
     print("Grade: A")
-elif score >= 60:
-    print("Grade: B")
-else:
+
+if score >= 60:
+    if score < 90:
+        print("Grade: B")
+
+if score < 60:
     print("Grade: C")
+
 print()
 
 # ------------------------------------------------------
@@ -139,10 +143,9 @@ print("▶ Return inside condition")
 def classify(n):
     if n > 0:
         return 1
-    elif n < 0:
+    if n < 0:
         return -1
-    else:
-        return 0
+    return 0
 
 print("classify(10) =", classify(10))
 print("classify(-5) =", classify(-5))
@@ -154,10 +157,10 @@ print()
 # ------------------------------------------------------
 print("▶ While loop countdown")
 
-i = 5
-while (i > 0):
-    print(i)
-    i = i - 1
+counter = 5
+while (counter > 0):
+    print(counter)
+    counter = counter - 1
 print()
 
 # ------------------------------------------------------
@@ -165,11 +168,11 @@ print()
 # ------------------------------------------------------
 print("▶ C-style for loop (sum 1 to 5)")
 
-total = 0
+sum_total = 0
 for (j = 1; j <= 5; j = j + 1):
-    total = total + j
+    sum_total = sum_total + j
 
-print("Sum =", total)
+print("Sum =", sum_total)
 print()
 
 # ------------------------------------------------------
@@ -182,7 +185,7 @@ for k in range(0, 6, 2):
 print()
 
 # ------------------------------------------------------
-# 1️⃣5️⃣ Fixed-size numeric arrays (NEW in v0.8)
+# 1️⃣5️⃣ Fixed-size numeric arrays (v0.8)
 # ------------------------------------------------------
 print("▶ Fixed-size numeric arrays")
 
@@ -225,18 +228,82 @@ print()
 # ------------------------------------------------------
 print("▶ Looping over array indices")
 
-int squares[5]
+int sqrs[5]
 
-for idx in range(len(squares)):
-    squares[idx] = idx * idx
+for m in range(len(sqrs)):
+    sqrs[m] = m * m
 
-for idx in range(len(squares)):
-    print("squares[", idx, "] =", squares[idx])
+for m in range(len(sqrs)):
+    print("sqrs[", m, "] =", sqrs[m])
+print()
+
+# ------------------------------------------------------
+# 1️⃣9️⃣ 2D Arrays - Declaration (NEW in v0.9)
+# ------------------------------------------------------
+print("▶ 2D array declaration")
+
+int matrix[3][4]
+
+print("Declared int matrix[3][4]")
+print("len(matrix) =", len(matrix))
+print("len(matrix[0]) =", len(matrix[0]))
+print()
+
+# ------------------------------------------------------
+# 2️⃣0️⃣ 2D Arrays - Initialization (NEW in v0.9)
+# ------------------------------------------------------
+print("▶ 2D array with initialization")
+
+int grid[2][3] = [[1, 2, 3], [4, 5, 6]]
+
+print("grid[0][0] =", grid[0][0])
+print("grid[0][1] =", grid[0][1])
+print("grid[0][2] =", grid[0][2])
+print("grid[1][0] =", grid[1][0])
+print("grid[1][1] =", grid[1][1])
+print("grid[1][2] =", grid[1][2])
+print()
+
+# ------------------------------------------------------
+# 2️⃣1️⃣ 2D Arrays - Assignment (NEW in v0.9)
+# ------------------------------------------------------
+print("▶ 2D array element assignment")
+
+matrix[0][0] = 100
+matrix[1][2] = 42
+matrix[2][3] = 999
+
+print("matrix[0][0] =", matrix[0][0])
+print("matrix[1][2] =", matrix[1][2])
+print("matrix[2][3] =", matrix[2][3])
+print()
+
+# ------------------------------------------------------
+# 2️⃣2️⃣ 2D Arrays - Nested loop iteration (NEW in v0.9)
+# ------------------------------------------------------
+print("▶ Nested loop over 2D array")
+
+for row in range(len(grid)):
+    for col in range(len(grid[0])):
+        print("grid[", row, "][", col, "] =", grid[row][col])
+print()
+
+# ------------------------------------------------------
+# 2️⃣3️⃣ 2D Arrays - Matrix sum (NEW in v0.9)
+# ------------------------------------------------------
+print("▶ 2D array matrix sum")
+
+int sum_val = 0
+for row in range(len(grid)):
+    for col in range(len(grid[0])):
+        sum_val = sum_val + grid[row][col]
+
+print("Sum of all elements =", sum_val)
 print()
 
 # ------------------------------------------------------
 # 🔚 End
 # ------------------------------------------------------
 print("==============================================")
-print("  End of Vyom v0.8 Demo")
+print("  End of Vyom v0.9 Demo")
 print("==============================================")
