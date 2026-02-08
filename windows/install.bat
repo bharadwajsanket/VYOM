@@ -64,7 +64,7 @@ if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 if not exist "%EXAMPLES_DIR%" mkdir "%EXAMPLES_DIR%"
 echo        Created C:\Vyom
 
-echo  [3/5] Copying executable...
+echo  [3/6] Copying executable...
 copy /Y "%SRC_EXE%" "%INSTALL_DIR%\vyom.exe" >nul
 if %errorlevel% neq 0 (
     echo  [ERROR] Failed to copy vyom.exe
@@ -73,7 +73,14 @@ if %errorlevel% neq 0 (
 )
 echo        Copied vyom.exe
 
-echo  [4/5] Installing examples...
+:: Copy icon if exists
+set "SRC_ICO=%~dp0vyom.ico"
+if exist "%SRC_ICO%" (
+    copy /Y "%SRC_ICO%" "%INSTALL_DIR%\vyom.ico" >nul
+    echo        Copied vyom.ico
+)
+
+echo  [4/6] Installing examples...
 if exist "%SRC_EXAMPLES%" (
     xcopy /E /I /Y "%SRC_EXAMPLES%" "%EXAMPLES_DIR%" >nul
     echo        Copied examples
@@ -99,15 +106,19 @@ echo  [6/6] Registering .vy file association...
 :: Register .vy extension
 reg add "HKCR\.vy" /ve /d "VyomFile" /f >nul 2>&1
 reg add "HKCR\VyomFile" /ve /d "Vyom Source File" /f >nul 2>&1
-:: Set icon (uses vyom.exe icon if available, otherwise default)
+:: Set icon
 if exist "%INSTALL_DIR%\vyom.ico" (
     reg add "HKCR\VyomFile\DefaultIcon" /ve /d "%INSTALL_DIR%\vyom.ico" /f >nul 2>&1
 ) else (
     reg add "HKCR\VyomFile\DefaultIcon" /ve /d "%INSTALL_DIR%\vyom.exe,0" /f >nul 2>&1
 )
-:: Set "Open with Vyom" action
-reg add "HKCR\VyomFile\shell\open\command" /ve /d "\"%INSTALL_DIR%\vyom.exe\" \"%%1\"" /f >nul 2>&1
+:: Set double-click to open in terminal and keep it open
+reg add "HKCR\VyomFile\shell\open\command" /ve /d "cmd /k \"%INSTALL_DIR%\vyom.exe\" \"%%1\"" /f >nul 2>&1
 echo        Registered .vy file type
+
+:: Refresh icon cache
+ie4uinit.exe -show >nul 2>&1
+echo        Refreshed icon cache
 
 echo.
 echo  =============================================
