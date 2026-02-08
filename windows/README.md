@@ -1,62 +1,34 @@
-# 🌌 Vyom — Minimal, Learning‑First Programming Language
-
-This document describes **Vyom v0.7** behavior (Windows release).
+# 🌌 Vyom v1.0 — Windows Release
 
 Created and maintained by **Sanket Bharadwaj**
 
-Vyom is a small, indentation‑based scripting language written in C.
+A minimal, explicit scripting language with transparent execution semantics.  
+Written in ~2700 lines of C. No dependencies. No magic.
 
-Vyom is designed for clarity: every line executes exactly as written, with no hidden behavior, implicit conversions, or magic layers.
+> "If the code can be followed line by line, the design is correct."
 
-> “If the code can be followed line by line, the design is correct.”
+---
 
-------------------------------------------------------------
-
-## 🚀 Current Version
-
-**Vyom v0.7 — Strict Core & Developer Quality ⭐**
-
-### New in v0.7
-- Mandatory `print(...)` syntax (parentheses required)
-- Multi‑argument `print()` support
-- `break` and `continue` statements
-- Block‑local loop scope
-- `const` variables (immutable)
-- Optional explicit typing: `int`, `double`, `string`
-- Strict type‑safe comparisons
-- Introspection constants: `__version__`, `__file__`
-- Improved error messages with exact line numbers
-- All features from v0.6 (loops, functions, control flow)
-
-### Truth Model
-```
-0        → false
-non‑zero → true
-```
-
-------------------------------------------------------------
-
-## 📁 Package Contents (Windows)
+## 📁 Package Contents
 
 ```
-Vyom-0.7-Windows/
+Vyom-1.0-Windows/
 ├── vyom.exe          # Vyom interpreter
-├── install.bat      # Installer (adds Vyom to PATH)
-├── uninstall.bat    # Uninstaller (clean removal)
-├── README.md        # This file
+├── install.bat       # Installer (adds Vyom to PATH)
+├── uninstall.bat     # Uninstaller (clean removal)
+├── README.md         # This file
 └── examples/
-    └── main.vy      # Progressive demo program
+    └── main.vy       # Demo program
 ```
 
-------------------------------------------------------------
+---
 
-## ⚡ Quick Start
+## ⚡ Installation
 
 ### Install
-1. Right‑click **install.bat**
+1. Right-click **install.bat**
 2. Select **Run as administrator**
-3. Close the terminal
-4. Open a **new** terminal window
+3. Restart your terminal
 
 ### Verify
 ```bash
@@ -65,38 +37,86 @@ vyom --version
 
 Expected output:
 ```
-Vyom v0.7
+Vyom v1.0
 ```
 
-### Run Example
-```bash
-vyom C:\Vyom\examples\main.vy
-```
+### Uninstall
+1. Right-click **uninstall.bat**
+2. Select **Run as administrator**
 
-------------------------------------------------------------
+---
 
-## ✨ Example
+## ✨ Language Features
+
+### Core
+- Variables with optional typing (`int`, `double`, `string`)
+- `const` immutable variables
+- Lexical scoping (no shadowing)
+
+### Operators
+- Arithmetic: `+`, `-`, `*`, `/`, `//` (integer division)
+- Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- Logical: `and`, `or`, `not`
+
+### Control Flow
+- `if` / `elif` / `else`
+- `while`, `for`, `for-in-range`
+- `break`, `continue`
+
+### Data Structures
+- 1D Arrays: `int a[5]`
+- 2D Arrays: `int grid[3][4]`
+- Bounds checking always on
+
+### Functions
+- `def` with parameters and return
+- Recursion supported
+- `print()`, `len()`, `exit()`
+
+---
+
+## 🚀 Example
 
 ```vy
+# Hello World
 name = "Vyom"
-print("Hello")
-print(name)
+print("Hello,", name)
+
+# Integer Division
+print(7 // 3)   # 2
+
+# Arrays
+int nums[3] = [1, 2, 3]
+print(len(nums))
 ```
 
-Output:
-```
-Hello
-Vyom
-```
+---
 
-------------------------------------------------------------
+## ⚠️ Windows Security Notice
+
+Windows may show "Smart App Control blocked this file" for unsigned scripts.
+
+**To proceed:**
+1. Right-click `install.bat`
+2. Properties → Check **Unblock**
+3. Run again as Administrator
+
+---
+
+## 📚 Documentation
+
+- [Full README](https://github.com/Sanket-Bharadwaj/VYOM)
+- [Syntax Guide](https://github.com/Sanket-Bharadwaj/VYOM/blob/main/docs/SYNTAX.md)
+- [Changelog](https://github.com/Sanket-Bharadwaj/VYOM/blob/main/CHANGELOG.md)
+
+---
 
 ## 📜 License
 
-MIT License — see **LICENSE** file for details.
+MIT License
 
-------------------------------------------------------------
+---
 
 Made with ❤️ by **Sanket Bharadwaj**
 
-Vyom is designed to be understood, not rushed.
+**Build with clarity. Execute with transparency.** 🌌
