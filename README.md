@@ -28,13 +28,13 @@ If you cannot trace execution line-by-line through the source, the design is wro
 
 ## Status
 
-**Current Release:** v0.9.0 — *2D Arrays & Multi-Dimensional Data*
+**Current Release:** v1.0 — *Hardened Core Release*
 
 ```
 Language:     Vyom
-Version:      0.9.0
+Version:      1.0
 License:      MIT
-Interpreter:  ~2500 lines of C
+Interpreter:  ~2700 lines of C
 Dependencies: None (libc only)
 Platform:     POSIX-compliant systems, Windows
 ```
@@ -42,6 +42,12 @@ Platform:     POSIX-compliant systems, Windows
 ---
 
 ## Features
+
+### Implemented in v1.0
+- **Integer Division (`//`)** — Truncates toward zero
+- Hardened recursion and control flow
+- Strict parameter scoping
+- String-safe parsing throughout
 
 ### Implemented in v0.9
 - **2D Fixed-size arrays** (`int a[rows][cols]`)
@@ -59,7 +65,7 @@ Platform:     POSIX-compliant systems, Windows
 - **`len()` builtin** for arrays and strings
 - First-class functions (no closures)
 - Numeric and string literals
-- Arithmetic operators: `+ - * /`
+- Arithmetic operators: `+ - * / //`
 - Strict type-safe comparisons
 - Boolean logic: `and`, `or`, `not` (short-circuit)
 - Control flow: `if / elif / else`

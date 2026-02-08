@@ -1,9 +1,9 @@
-# 🌌 Vyom — Language Syntax Guide (v0.9)
+# 🌌 Vyom — Language Syntax Guide (v1.0)
 
 Vyom is a small, indentation-based scripting language written in C.  
 It is designed to be **explicit, predictable, and easy to reason about**.
 
-This document describes the **exact syntax supported in Vyom v0.9**.
+This document describes the **exact syntax supported in Vyom v1.0**.
 
 ---
 
@@ -42,8 +42,11 @@ Rules:
 Supported operators:
 
 ```
-+   -   *   /
++   -   *   /   //
 ```
+
+- `/` — floating-point division
+- `//` — integer division (truncates toward zero)
 
 Examples:
 
@@ -51,6 +54,8 @@ Examples:
 a = 10 + 5
 b = a * 2
 c = (a + b) / 3
+d = 7 // 3        # 2
+e = -7 // 3       # -2
 ```
 
 Notes:
@@ -316,7 +321,7 @@ exit(1)
 
 ---
 
-## ❌ Not Supported in v0.9
+## ❌ Not Supported in v1.0
 
 - Dynamic arrays
 - 2D string arrays (only numeric 2D supported)

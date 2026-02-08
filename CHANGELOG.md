@@ -1,19 +1,67 @@
 # 📜 Vyom — Changelog
 
 All notable changes to the **Vyom Programming Language** are documented here.
-This file reflects the complete evolution from **v0.1 → v0.9**.
+This file reflects the complete evolution from **v0.1 → v1.0**.
+
+---
+
+# 🚀 v1.0 — Hardened Core Release
+
+## Summary
+
+Vyom v1.0 is the **first production-ready release**. This version focuses on correctness, stability, and strict adherence to language semantics. The interpreter has been hardened through comprehensive testing and critical bug fixes.
+
+---
+
+## ✨ New Features
+
+### 1. Integer Division (`//`)
+
+- Truncates toward zero (not floor division)
+- `5 // 2` → `2`
+- `-5 // 2` → `-2`
+- Division by zero raises runtime error
+
+```vy
+int result = 7 // 3   # 2
+int neg = -7 // 3     # -2
+```
+
+---
+
+## 🔧 Critical Fixes
+
+### Recursion & Control Flow
+- Fixed control flag leakage (`return`, `break`, `continue`) across function boundaries
+- Recursive functions now correctly maintain their own state
+
+### Block Execution in Functions
+- Fixed parser bug where `if`/`while`/`for` blocks inside functions executed unconditionally
+- Blocks are now correctly skipped when their controlling statement processes them
+
+### Parameter Scoping
+- Fixed bug where function parameters could overwrite caller's variables
+- Parameters now strictly create new local variables in the function scope
+
+### String-Safe Parsing
+- `eval_expr`, `eval_and`, `eval_or` now respect string quotes
+- Operators inside string literals (`"has // inside"`) are no longer misinterpreted
+- Inline comments are stripped safely (`x = 1 # comment` works correctly)
+
+### Unary Minus Parsing
+- Fixed parsing of expressions like `5 // -2` where whitespace confused the parser
+
+---
+
+## 🔒 Stability Guarantee
+
+- All v0.9 behavior is preserved
+- No syntax changes outside listed features
+- Release verified with comprehensive torture test suite
 
 ---
 
 # 🚀 v0.9 — 2D Arrays & Multi-Dimensional Data
-
-## Summary
-
-Vyom v0.9 extends the array system with **fixed-size 2D arrays**, enabling grid-based data structures and matrix operations while maintaining the language's commitment to explicit, bounds-checked semantics.
-
-No v0.8 behavior was removed. All existing programs continue to run unchanged.
-
----
 
 ## ✨ New Features
 
