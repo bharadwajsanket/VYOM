@@ -113,7 +113,9 @@ if exist "%INSTALL_DIR%\vyom.ico" (
     reg add "HKCR\VyomFile\DefaultIcon" /ve /d "%INSTALL_DIR%\vyom.exe,0" /f >nul 2>&1
 )
 :: Set double-click to open in terminal and keep it open
-reg add "HKCR\VyomFile\shell\open\command" /ve /d "cmd /k \"%INSTALL_DIR%\vyom.exe\" \"%%1\"" /f >nul 2>&1
+reg add "HKCR\VyomFile\shell" /ve /d "open" /f >nul 2>&1
+reg add "HKCR\VyomFile\shell\open" /ve /d "Run with Vyom" /f >nul 2>&1
+reg add "HKCR\VyomFile\shell\open\command" /ve /d "cmd.exe /k C:\Vyom\vyom.exe \"%%1\"" /f >nul 2>&1
 echo        Registered .vy file type
 
 :: Refresh icon cache
