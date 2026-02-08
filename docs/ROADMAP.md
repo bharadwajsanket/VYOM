@@ -143,7 +143,7 @@ not aspirational promises.
 
 ---
 
-## 🔮 v0.10 — File I/O & Environment (Planned)
+## 🔮 v1.1 — File I/O & Environment (Planned)
 
 **Focus:** controlled interaction with the outside world
 
@@ -154,15 +154,19 @@ not aspirational promises.
 
 ---
 
-## 🚀 v1.0 — Stable Core (Target)
+## ✅ v1.0 — Hardened Core Release (Released)
 
-**Definition of v1.0:**
+**Focus:** production-ready stability
 
-- Stable syntax (no breaking changes)
-- Stable semantics
-- Fully documented behavior
-- Predictable execution model
-- Production-ready procedural scripting language
+- **Integer Division (`//`)** — truncates toward zero
+- Fixed recursion and control flow flag leakage
+- Fixed unconditional block execution in functions
+- Fixed parameter scoping (shadowing prevention)
+- String-safe parsing (operators in string literals)
+- Inline comment stripping
+- Comprehensive torture test suite
+
+> v1.0 is the **first production-ready Vyom release**.
 
 ---
 
