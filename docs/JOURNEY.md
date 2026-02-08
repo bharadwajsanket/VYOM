@@ -1,4 +1,4 @@
-# 🌌 Vyom — A Story (v0.1 → v0.9)
+# 🌌 Vyom — A Story (v0.1 → v1.0)
 
 This is not documentation.  
 This is not a changelog.
@@ -218,6 +218,38 @@ discipline wahi tha.
 
 > Jitni dimensions badhengi,  
 > utni responsibility badhegi.
+
+---
+
+## 🔒 v1.0 — Freeze
+
+Ye version features ke baare me nahi tha.
+
+Ye version **trust** ke baare me tha.
+
+- Integer division (`//`) aaya — with correct truncation
+- Recursion fix hua — control flags leak nahi hote ab
+- Functions sahi behave karte hain — har scope isolated
+- Strings safe hain — operators inside quotes parsed nahi hote
+- Comments inline kaam karte hain — `x = 1 # yay`
+
+Torture tests likhe gaye.  
+Edge cases todne ki koshish ki gayi.  
+Aur jab kuch nahi toota —
+
+Tab Vyom ne **production-ready** hone ka haq kamaya.
+
+```
+./vyom --version
+Vyom v1.0
+```
+
+Ye ek simple output hai.  
+Par is output ke peeche —  
+months of discipline hain.
+
+> v1.0 is not the end.  
+> v1.0 is the proof that something can be *finished*.
 
 ---
 
