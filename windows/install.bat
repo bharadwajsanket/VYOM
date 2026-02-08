@@ -74,7 +74,7 @@ if %errorlevel% neq 0 (
 echo        Copied vyom.exe
 
 :: Copy icon if exists
-set "SRC_ICO=%~dp0vyom.ico"
+set "SRC_ICO=%~dp0assets\vyom.ico"
 if exist "%SRC_ICO%" (
     copy /Y "%SRC_ICO%" "%INSTALL_DIR%\vyom.ico" >nul
     echo        Copied vyom.ico

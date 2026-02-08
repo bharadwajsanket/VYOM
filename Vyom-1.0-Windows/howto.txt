@@ -1,0 +1,63 @@
+================================================================================
+                         VYOM v1.0 - QUICK START GUIDE
+================================================================================
+
+INSTALLATION
+------------
+1. Right-click "install.bat"
+2. Select "Run as administrator"
+3. Restart your terminal/command prompt
+
+VERIFY INSTALLATION
+-------------------
+Open a new terminal and run:
+    vyom --version
+
+Expected output:
+    Vyom v1.0
+
+RUN YOUR FIRST PROGRAM
+----------------------
+    vyom C:\Vyom\examples\main.vy
+
+Or create your own file (e.g., hello.vy):
+
+    name = "World"
+    print("Hello,", name)
+
+Then run:
+    vyom hello.vy
+
+DOUBLE-CLICK TO RUN
+-------------------
+After installation, you can double-click any .vy file to run it.
+The terminal will stay open so you can see the output.
+
+UNINSTALL
+---------
+1. Right-click "uninstall.bat"
+2. Select "Run as administrator"
+
+This removes:
+- C:\Vyom folder
+- System PATH entry
+- .vy file association
+
+TROUBLESHOOTING
+---------------
+Q: "vyom" command not found?
+A: Restart your terminal after installation.
+
+Q: Icon not showing for .vy files?
+A: Right-click Desktop > Refresh, or restart Windows Explorer.
+
+Q: Windows blocks the installer?
+A: Right-click install.bat > Properties > Check "Unblock" > Apply
+
+DOCUMENTATION
+-------------
+Full documentation: https://github.com/Sanket-Bharadwaj/VYOM
+
+================================================================================
+                        Build with clarity. Execute with transparency.
+================================================================================
