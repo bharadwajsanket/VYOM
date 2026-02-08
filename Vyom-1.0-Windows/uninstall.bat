@@ -46,15 +46,21 @@ if not exist "%INSTALL_DIR%" (
 echo        Found installation at %INSTALL_DIR%
 
 :: Step 2: Remove Files
-echo  [2/3] Removing files...
+echo  [2/4] Removing files...
 if exist "%INSTALL_DIR%\vyom.exe" del /Q "%INSTALL_DIR%\vyom.exe" >nul 2>&1
+if exist "%INSTALL_DIR%\vyom.ico" del /Q "%INSTALL_DIR%\vyom.ico" >nul 2>&1
 if exist "%INSTALL_DIR%\examples" rmdir /S /Q "%INSTALL_DIR%\examples" >nul 2>&1
 rmdir /S /Q "%INSTALL_DIR%" >nul 2>&1
 echo        Removed C:\Vyom
 
+echo  [3/4] Removing .vy file association...
+reg delete "HKCR\.vy" /f >nul 2>&1
+reg delete "HKCR\VyomFile" /f >nul 2>&1
+echo        Removed .vy file type
+
 :cleanup_path
-:: Step 3: Clean PATH
-echo  [3/3] Cleaning System PATH...
+:: Step 4: Clean PATH
+echo  [4/4] Cleaning System PATH...
 echo %PATH% | find /i "%INSTALL_DIR%" >nul
 if %errorlevel% equ 0 (
     powershell -Command ^
