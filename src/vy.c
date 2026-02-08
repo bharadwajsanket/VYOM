@@ -14,7 +14,7 @@
 #define MAX_CALL_DEPTH 64
 #define MAX_ARGS 8
 #define MAX_ARRAY_SIZE 10000
-#define VYOM_VERSION "0.9"
+#define VYOM_VERSION "1.0"
 
 // ================= TYPES =================
 
@@ -325,6 +325,15 @@ double call_function_expr(Func *f, char args[MAX_ARGS][64], int argc) {
     values[i] = eval_condition(args[i]);
   }
 
+  // Save control flags
+  int old_did_return = did_return;
+  int old_did_break = did_break;
+  int old_did_continue = did_continue;
+
+  did_return = 0;
+  did_break = 0;
+  did_continue = 0;
+
   call_stack[call_depth].local_count = 0;
   call_stack[call_depth].is_loop_scope = 0;
   call_depth++;
@@ -340,24 +349,81 @@ double call_function_expr(Func *f, char args[MAX_ARGS][64], int argc) {
     v.explicit = 0;
     v.is_const = 0;
     v.is_array = 0;
-    set_var(v);
-  }
 
-  did_return = 0;
+    // Force creation in current scope (shadowing)
+    CallFrame *frame = &call_stack[call_depth - 1];
+    if (frame->local_count < MAX_VARS) {
+      frame->locals[frame->local_count++] = v;
+    } else {
+      error("too many local variables", f->name);
+    }
+  }
 
   for (int i = f->start; i < f->end && !did_return; i++) {
     current_line = program[i].line_num;
     char tmp[MAX_LINE];
     strcpy(tmp, program[i].text);
-    exec_statement(trim(tmp));
+    char *stmt = trim(tmp);
+
+    if (!*stmt || *stmt == '#')
+      continue;
+
+    // Strip trailing comments (respecting strings)
+    int in_string = 0;
+    for (char *p = stmt; *p; p++) {
+      if (*p == '"' && (p == stmt || p[-1] != '\\')) {
+        in_string = !in_string;
+      }
+      if (!in_string && *p == '#') {
+        *p = 0;
+        break;
+      }
+    }
+    stmt = trim(stmt);
+    if (!*stmt)
+      continue;
+
+    if (!strncmp(stmt, "if", 2) && (stmt[2] == ' ' || stmt[2] == '\t')) {
+      exec_statement(stmt);
+      if (did_return || did_break || did_continue)
+        break;
+      i = find_block_end(i) - 1;
+      continue;
+    }
+
+    if (!strncmp(stmt, "while", 5) && (stmt[5] == ' ' || stmt[5] == '\t')) {
+      exec_statement(stmt);
+      if (did_return || did_break || did_continue)
+        break;
+      i = find_block_end(i) - 1;
+      continue;
+    }
+
+    if (!strncmp(stmt, "for", 3) && (stmt[3] == ' ' || stmt[3] == '\t')) {
+      exec_statement(stmt);
+      if (did_return || did_break || did_continue)
+        break;
+      i = find_block_end(i) - 1;
+      continue;
+    }
+
+    exec_statement(stmt);
   }
 
   call_depth--;
 
-  if (!did_return)
+  int actual_did_return = did_return;
+  double val = return_value;
+
+  // Restore flags
+  did_return = old_did_return;
+  did_break = old_did_break;
+  did_continue = old_did_continue;
+
+  if (!actual_did_return)
     error("function missing return statement", f->name);
 
-  return return_value;
+  return val;
 }
 
 void call_function_stmt(Func *f, char args[MAX_ARGS][64], int argc) {
@@ -369,6 +435,15 @@ void call_function_stmt(Func *f, char args[MAX_ARGS][64], int argc) {
     values[i] = eval_condition(args[i]);
   }
 
+  // Save control flags
+  int old_did_return = did_return;
+  int old_did_break = did_break;
+  int old_did_continue = did_continue;
+
+  did_return = 0;
+  did_break = 0;
+  did_continue = 0;
+
   call_stack[call_depth].local_count = 0;
   call_stack[call_depth].is_loop_scope = 0;
   call_depth++;
@@ -384,22 +459,75 @@ void call_function_stmt(Func *f, char args[MAX_ARGS][64], int argc) {
     v.explicit = 0;
     v.is_const = 0;
     v.is_array = 0;
-    set_var(v);
-  }
 
-  did_return = 0;
+    // Force creation in current scope (shadowing)
+    CallFrame *frame = &call_stack[call_depth - 1];
+    if (frame->local_count < MAX_VARS) {
+      frame->locals[frame->local_count++] = v;
+    } else {
+      error("too many local variables", f->name);
+    }
+  }
 
   for (int i = f->start; i < f->end; i++) {
     current_line = program[i].line_num;
     char tmp[MAX_LINE];
     strcpy(tmp, program[i].text);
-    exec_statement(trim(tmp));
+    char *stmt = trim(tmp);
+
+    if (!*stmt || *stmt == '#')
+      continue;
+
+    // Strip trailing comments (respecting strings)
+    int in_string = 0;
+    for (char *p = stmt; *p; p++) {
+      if (*p == '"' && (p == stmt || p[-1] != '\\')) {
+        in_string = !in_string;
+      }
+      if (!in_string && *p == '#') {
+        *p = 0;
+        break;
+      }
+    }
+    stmt = trim(stmt);
+    if (!*stmt)
+      continue;
+
+    if (!strncmp(stmt, "if", 2) && (stmt[2] == ' ' || stmt[2] == '\t')) {
+      exec_statement(stmt);
+      if (did_return || did_break || did_continue)
+        break;
+      i = find_block_end(i) - 1;
+      continue;
+    }
+
+    if (!strncmp(stmt, "while", 5) && (stmt[5] == ' ' || stmt[5] == '\t')) {
+      exec_statement(stmt);
+      if (did_return || did_break || did_continue)
+        break;
+      i = find_block_end(i) - 1;
+      continue;
+    }
+
+    if (!strncmp(stmt, "for", 3) && (stmt[3] == ' ' || stmt[3] == '\t')) {
+      exec_statement(stmt);
+      if (did_return || did_break || did_continue)
+        break;
+      i = find_block_end(i) - 1;
+      continue;
+    }
+
+    exec_statement(stmt);
     if (did_return)
       break;
   }
 
   call_depth--;
-  did_return = 0;
+
+  // Restore flags
+  did_return = old_did_return;
+  did_break = old_did_break;
+  did_continue = old_did_continue;
 }
 
 // ================= EXPRESSION EVALUATION PIPELINE =================
@@ -621,13 +749,39 @@ double eval_expr(const char *s) {
   strcpy(buf, s);
   char *str = trim(buf);
 
+  // Level 1: + and -
   int depth = 0;
+  int in_string = 0;
   for (char *p = str + strlen(str) - 1; p >= str; p--) {
+    if (*p == '"' && (p == str || p[-1] != '\\')) {
+      in_string = !in_string;
+    }
+    if (in_string)
+      continue;
+
     if (*p == ')' || *p == ']')
       depth++;
     else if (*p == '(' || *p == '[')
       depth--;
     else if (depth == 0 && (*p == '+' || *p == '-')) {
+      // Ensure this isn't part of a scientific notation (e.g., 1e-5) or
+      // negative number start But we are scanning right-to-left. If we see '-',
+      // we need to check if it's a binary operator or unary. In this simple
+      // right-to-left scan, if it's the very first char (p==str), it's unary.
+      // Scan backwards to skip whitespace to find the real previous token
+      char *prev = p - 1;
+      while (prev >= str && (*prev == ' ' || *prev == '\t'))
+        prev--;
+
+      if (prev < str)
+        continue; // Unary (start of string or only whitespace before)
+
+      // If the char before is an operator, it's unary.
+      char c = *prev;
+      if (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' ||
+          c == '[' || c == ',')
+        continue;
+
       char left[MAX_LINE], right[MAX_LINE];
       strncpy(left, str, p - str);
       left[p - str] = 0;
@@ -643,27 +797,53 @@ double eval_expr(const char *s) {
     }
   }
 
+  // Level 2: *, /, //
   depth = 0;
+  in_string = 0;
   for (char *p = str + strlen(str) - 1; p >= str; p--) {
+    if (*p == '"' && (p == str || p[-1] != '\\')) {
+      in_string = !in_string;
+    }
+    if (in_string)
+      continue;
+
     if (*p == ')' || *p == ']')
       depth++;
     else if (*p == '(' || *p == '[')
       depth--;
-    else if (depth == 0 && (*p == '*' || *p == '/')) {
-      char left[MAX_LINE], right[MAX_LINE];
-      strncpy(left, str, p - str);
-      left[p - str] = 0;
-      strcpy(right, p + 1);
+    else if (depth == 0) {
+      if (*p == '*' || *p == '/') {
+        // Check for //
+        int is_int_div = 0;
+        char *split_p = p;
 
-      double a = eval_expr(left);
-      double b = eval_expr(right);
+        if (*p == '/' && p > str && *(p - 1) == '/') {
+          is_int_div = 1;
+          split_p = p - 1; // Split at the first slash
+          p--;             // Skip the second slash in the loop
+        }
 
-      if (*p == '*')
-        return a * b;
-      if (*p == '/') {
-        if (b == 0)
-          error("division by zero", NULL);
-        return a / b;
+        char left[MAX_LINE], right[MAX_LINE];
+        strncpy(left, str, split_p - str);
+        left[split_p - str] = 0;
+        strcpy(right, split_p + (is_int_div ? 2 : 1));
+
+        double a = eval_expr(left);
+        double b = eval_expr(right);
+
+        if (is_int_div) {
+          if (b == 0)
+            error("division by zero", NULL);
+          return (double)((int)(a / b));
+        }
+
+        if (*split_p == '*')
+          return a * b;
+        if (*split_p == '/') {
+          if (b == 0)
+            error("division by zero", NULL);
+          return a / b;
+        }
       }
     }
   }
@@ -879,8 +1059,15 @@ double eval_and(const char *s) {
   char *str = trim(buf);
 
   int depth = 0;
+  int in_string = 0;
 
   for (char *p = str; *p; p++) {
+    if (*p == '"' && (p == str || p[-1] != '\\')) {
+      in_string = !in_string;
+    }
+    if (in_string)
+      continue;
+
     if (*p == '(' || *p == '[')
       depth++;
     else if (*p == ')' || *p == ']')
@@ -911,8 +1098,15 @@ double eval_or(const char *s) {
   char *str = trim(buf);
 
   int depth = 0;
+  int in_string = 0;
 
   for (char *p = str; *p; p++) {
+    if (*p == '"' && (p == str || p[-1] != '\\')) {
+      in_string = !in_string;
+    }
+    if (in_string)
+      continue;
+
     if (*p == '(' || *p == '[')
       depth++;
     else if (*p == ')' || *p == ']')
@@ -1512,7 +1706,24 @@ void exec_if_block(int i) {
 
 void exec_statement(char *t) {
 
-  if (!*t || *t == '#')
+  if (!*t)
+    return;
+
+  // Strip trailing comments (respecting strings)
+  int in_string = 0;
+  for (char *p = t; *p; p++) {
+    if (*p == '"' && (p == t || p[-1] != '\\')) {
+      in_string = !in_string;
+    }
+    if (!in_string && *p == '#') {
+      *p = 0;
+      break;
+    }
+  }
+
+  // Trim again after stripping comment
+  t = trim(t);
+  if (!*t)
     return;
 
   if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4)) {

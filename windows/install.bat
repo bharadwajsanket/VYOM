@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Vyom Installer v0.9
+title Vyom Installer v1.0
 color 0B
 
 :: =====================================================
-:: VYOM INSTALLER v0.9
+:: VYOM INSTALLER v1.0
 :: =====================================================
 
 :header
@@ -18,7 +18,7 @@ echo  [96m   \  /         ||    | |____| |  | |  | |[0m
 echo  [96m    \/          ()     \______/   |_|  |_|[0m
 echo.
 echo  [97m   VYOM PROGRAMMING LANGUAGE[0m
-echo  [90m   v0.9 | Strict • Minimal • Honest[0m
+echo  [90m   v1.0 | Strict • Minimal • Honest[0m
 echo.
 echo  [90m=============================================[0m
 echo.
@@ -113,7 +113,7 @@ echo.
 echo.
 
 :: ---------------- SUCCESS ----------------
-echo  [92mSUCCESS![0m Vyom v0.9 has been installed.
+echo  [92mSUCCESS![0m Vyom v1.0 has been installed.
 echo.
 echo  [90m---------------------------------------------[0m
 echo  [97mInstallation Path:[0m  %INSTALL_DIR%

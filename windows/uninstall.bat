@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Vyom Uninstaller v0.9
+title Vyom Uninstaller v1.0
 color 0C
 
 :: =====================================================
-:: VYOM UNINSTALLER v0.9
+:: VYOM UNINSTALLER v1.0
 :: =====================================================
 
 :header
@@ -25,7 +25,7 @@ echo.
 
 :: ---------------- CONFIRM ----------------
 echo   [93m[?] Are you sure you want to uninstall Vyom? [0m
-echo      This will remove Vyom v0.9 and all examples.
+echo      This will remove Vyom v1.0 and all examples.
 echo.
 set /p "confirm=      Type Y to continue: "
 if /i not "%confirm%"=="Y" goto :eof
