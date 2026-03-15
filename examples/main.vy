@@ -1,309 +1,281 @@
-# ======================================================
-# 🌌 Vyom v0.9 — Official Progressive Demo
-# Covers: core language + fixed arrays + string indexing + 2D arrays
-# ======================================================
+# ================================================================
+#
+#  ██╗   ██╗██╗   ██╗ ██████╗ ███╗   ███╗
+#  ██║   ██║╚██╗ ██╔╝██╔═══██╗████╗ ████║
+#  ██║   ██║ ╚████╔╝ ██║   ██║██╔████╔██║
+#  ╚██╗ ██╔╝  ╚██╔╝  ██║   ██║██║╚██╔╝██║
+#   ╚████╔╝    ██║   ╚██████╔╝██║ ╚═╝ ██║
+#    ╚═══╝     ╚═╝    ╚═════╝ ╚═╝     ╚═╝
+#
+#  A minimal, explicit scripting language.
+#  https://getvyom.vercel.app
+#
+#  Run this file:
+#    vyom examples/main.vy
+#
+# ================================================================
 
-print("==============================================")
-print("  Vyom v0.9 — Progressive Language Demo")
-print("==============================================")
-print()
 
-# ------------------------------------------------------
-# 1️⃣ Dynamic variables
-# ------------------------------------------------------
-print("▶ Dynamic variables")
+# ----------------------------------------------------------------
+#  1. VARIABLES
+# ----------------------------------------------------------------
 
-x = 10
-y = 5
+int    age    = 21
+double height = 5.11
+string lang   = "Vyom"
+const int MAX = 100
 
-print("x =", x)
-print("y =", y)
-print()
+print("=== Variables ===")
+print("Language :", lang)
+print("Age      :", age)
+print("Height   :", height)
+print("Max      :", MAX)
 
-# ------------------------------------------------------
-# 2️⃣ Re-assignment
-# ------------------------------------------------------
-print("▶ Re-assignment")
 
-x = 20
-print("x after reassignment =", x)
-print()
+# ----------------------------------------------------------------
+#  2. ARITHMETIC
+# ----------------------------------------------------------------
 
-# ------------------------------------------------------
-# 3️⃣ Basic function
-# ------------------------------------------------------
-print("▶ Basic function")
+print("")
+print("=== Arithmetic ===")
 
-def greet():
-    print("Hello from greet()")
+int a = 17
+int b = 5
 
-greet()
-print()
+print("a + b  =", a + b)
+print("a - b  =", a - b)
+print("a * b  =", a * b)
+print("a / b  =", a / b)
+print("a // b =", a // b)
+print("a % b  =", a % b)
 
-# ------------------------------------------------------
-# 4️⃣ Function with parameters
-# ------------------------------------------------------
-print("▶ Function with parameters")
 
-def show(val):
-    print("Value:", val)
+# ----------------------------------------------------------------
+#  3. STRINGS
+# ----------------------------------------------------------------
 
-show(42)
-show(99)
-print()
+print("")
+print("=== Strings ===")
 
-# ------------------------------------------------------
-# 5️⃣ Local scope demo (NO SHADOWING)
-# ------------------------------------------------------
-print("▶ Local vs global scope")
+string word = "VYOM"
+print("Word   :", word)
+print("Length :", len(word))
+print("First  :", word[0])
+print("Last   :", word[3])
 
-temp = 999
+string rev = ""
+for si in range(len(word) - 1, -1, -1):
+    rev = concat(rev, word[si])
+print("Reverse:", rev)
 
-def local_demo():
-    local_temp = 42
-    print("Inside function, local_temp =", local_temp)
 
-local_demo()
-print("Outside function, temp =", temp)
-print()
+# ----------------------------------------------------------------
+#  4. IF / ELIF / ELSE
+# ----------------------------------------------------------------
 
-# ------------------------------------------------------
-# 6️⃣ Function with return value
-# ------------------------------------------------------
-print("▶ Function return value")
+print("")
+print("=== Conditionals ===")
 
-def add_nums(p, q):
-    return p + q
-
-print("add_nums(3, 4) =", add_nums(3, 4))
-print()
-
-# ------------------------------------------------------
-# 7️⃣ Nested function calls
-# ------------------------------------------------------
-print("▶ Nested function calls")
-
-def square(n):
-    return n * n
-
-def sum_of_squares(p, q):
-    return square(p) + square(q)
-
-print("sum_of_squares(3, 4) =", sum_of_squares(3, 4))
-print()
-
-# ------------------------------------------------------
-# 8️⃣ Comparisons
-# ------------------------------------------------------
-print("▶ Comparisons")
-
-num1 = 10
-num2 = 20
-
-print("num1 < num2  =", num1 < num2)
-print("num1 == num2 =", num1 == num2)
-print("num1 != num2 =", num1 != num2)
-print()
-
-# ------------------------------------------------------
-# 9️⃣ Logical operators
-# ------------------------------------------------------
-print("▶ Logical operators")
-
-print("num1 < num2 and num2 > 15 =", num1 < num2 and num2 > 15)
-print("num1 > num2 or num2 == 20 =", num1 > num2 or num2 == 20)
-print("not (num1 == num2)        =", not (num1 == num2))
-print()
-
-# ------------------------------------------------------
-# 🔟 if / elif / else control flow
-# ------------------------------------------------------
-print("▶ Conditional control flow")
-
-score = 72
-print("Score =", score)
+int score = 85
 
 if score >= 90:
     print("Grade: A")
-
-if score >= 60:
-    if score < 90:
-        print("Grade: B")
-
-if score < 60:
+elif score >= 80:
+    print("Grade: B")
+elif score >= 70:
     print("Grade: C")
+else:
+    print("Grade: F")
 
-print()
+int x = 42
+if x % 2 == 0:
+    print(x, "is even")
+else:
+    print(x, "is odd")
 
-# ------------------------------------------------------
-# 1️⃣1️⃣ Return inside condition
-# ------------------------------------------------------
-print("▶ Return inside condition")
 
-def classify(n):
-    if n > 0:
+# ----------------------------------------------------------------
+#  5. LOOPS
+# ----------------------------------------------------------------
+
+print("")
+print("=== Loops ===")
+
+print("Countdown:")
+int n = 5
+while (n > 0):
+    print(n)
+    n = n - 1
+
+print("Range 1 to 5:")
+for i in range(1, 6):
+    print(i)
+
+print("Step by 2:")
+for i in range(0, 10, 2):
+    print(i)
+
+print("C-style for:")
+for (int ci = 0; ci < 4; ci = ci + 1):
+    print(ci)
+
+print("Skip 3, stop at 6:")
+for i in range(10):
+    if i == 3:
+        continue
+    if i == 6:
+        break
+    print(i)
+
+
+# ----------------------------------------------------------------
+#  6. FUNCTIONS
+# ----------------------------------------------------------------
+
+print("")
+print("=== Functions ===")
+
+def add(a, b):
+    return a + b
+
+def power(base, exp):
+    int result = 1
+    for pi in range(exp):
+        result = result * base
+    return result
+
+def factorial(n):
+    if n <= 1:
         return 1
-    if n < 0:
-        return -1
-    return 0
+    return n * factorial(n - 1)
 
-print("classify(10) =", classify(10))
-print("classify(-5) =", classify(-5))
-print("classify(0)  =", classify(0))
-print()
+def is_prime(n):
+    if n < 2:
+        return 0
+    for di in range(2, n):
+        if n % di == 0:
+            return 0
+    return 1
 
-# ------------------------------------------------------
-# 1️⃣2️⃣ While loop
-# ------------------------------------------------------
-print("▶ While loop countdown")
+print("add(7, 3)    =", add(7, 3))
+print("power(2, 8)  =", power(2, 8))
+print("factorial(6) =", factorial(6))
+print("is_prime(17) =", is_prime(17))
+print("is_prime(18) =", is_prime(18))
 
-counter = 5
-while (counter > 0):
-    print(counter)
-    counter = counter - 1
-print()
 
-# ------------------------------------------------------
-# 1️⃣3️⃣ C-style for loop
-# ------------------------------------------------------
-print("▶ C-style for loop (sum 1 to 5)")
+# ----------------------------------------------------------------
+#  7. ARRAYS
+# ----------------------------------------------------------------
 
-sum_total = 0
-for (j = 1; j <= 5; j = j + 1):
-    sum_total = sum_total + j
+print("")
+print("=== Arrays ===")
 
-print("Sum =", sum_total)
-print()
+int scores[5] = [92, 78, 85, 90, 76]
+print("Scores:", scores[0], scores[1], scores[2], scores[3], scores[4])
 
-# ------------------------------------------------------
-# 1️⃣4️⃣ Range-based for loop (v0.8 supports step)
-# ------------------------------------------------------
-print("▶ Range-based loop with step")
+int best = scores[0]
+for ai in range(1, len(scores)):
+    if scores[ai] > best:
+        best = scores[ai]
+print("Best  :", best)
 
-for k in range(0, 6, 2):
-    print(k)
-print()
+int total = 0
+for ai in range(len(scores)):
+    total = total + scores[ai]
+print("Avg   :", total / len(scores))
 
-# ------------------------------------------------------
-# 1️⃣5️⃣ Fixed-size numeric arrays (v0.8)
-# ------------------------------------------------------
-print("▶ Fixed-size numeric arrays")
+string days[7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+print("Days  :", days[0], days[1], days[2], days[3], days[4], days[5], days[6])
 
-int nums[5] = [1, 2, 3, 4, 5]
 
-print("nums[0] =", nums[0])
-print("nums[4] =", nums[4])
-print("len(nums) =", len(nums))
+# ----------------------------------------------------------------
+#  8. 2D ARRAYS
+# ----------------------------------------------------------------
 
-nums[2] = 99
-print("nums[2] after update =", nums[2])
-print()
+print("")
+print("=== 2D Arrays ===")
 
-# ------------------------------------------------------
-# 1️⃣6️⃣ String arrays
-# ------------------------------------------------------
-print("▶ String arrays")
+int identity[3][3]
+for row in range(3):
+    for col in range(3):
+        if row == col:
+            identity[row][col] = 1
+        else:
+            identity[row][col] = 0
 
-string names[3] = ["Sanket", "Vyom", "Lang"]
+print("Identity matrix 3x3:")
+for row in range(3):
+    print(identity[row][0], identity[row][1], identity[row][2])
 
-print("names[0] =", names[0])
-print("names[1] =", names[1])
-print("len(names) =", len(names))
-print()
+int mul[4][4]
+for row in range(4):
+    for col in range(4):
+        mul[row][col] = (row + 1) * (col + 1)
 
-# ------------------------------------------------------
-# 1️⃣7️⃣ String indexing (read-only)
-# ------------------------------------------------------
-print("▶ String indexing")
+print("Multiplication table 4x4:")
+for row in range(4):
+    print(mul[row][0], mul[row][1], mul[row][2], mul[row][3])
 
-word = "Vyom"
-print("word =", word)
-print("word[0] =", word[0])
-print("word[1] =", word[1])
-print("len(word) =", len(word))
-print()
 
-# ------------------------------------------------------
-# 1️⃣8️⃣ Array + loop together
-# ------------------------------------------------------
-print("▶ Looping over array indices")
+# ----------------------------------------------------------------
+#  9. BUILTINS
+# ----------------------------------------------------------------
 
-int sqrs[5]
+print("")
+print("=== Builtins ===")
 
-for m in range(len(sqrs)):
-    sqrs[m] = m * m
+print("ascii(A) =", ascii("A"))
+print("char(65) =", char(65))
 
-for m in range(len(sqrs)):
-    print("sqrs[", m, "] =", sqrs[m])
-print()
+string alphabet = ""
+for ai in range(26):
+    alphabet = concat(alphabet, char(65 + ai))
+print("Alphabet:", alphabet)
 
-# ------------------------------------------------------
-# 1️⃣9️⃣ 2D Arrays - Declaration (NEW in v0.9)
-# ------------------------------------------------------
-print("▶ 2D array declaration")
+# ROT13 using ascii / char / concat
+def rot13(c):
+    int code = ascii(c)
+    if code >= 65 and code <= 90:
+        return char((code - 65 + 13) % 26 + 65)
+    return c
 
-int matrix[3][4]
+string msg    = "VYOM"
+string cipher = ""
+for ri in range(len(msg)):
+    cipher = concat(cipher, rot13(msg[ri]))
 
-print("Declared int matrix[3][4]")
-print("len(matrix) =", len(matrix))
-print("len(matrix[0]) =", len(matrix[0]))
-print()
+string back = ""
+for ri in range(len(cipher)):
+    back = concat(back, rot13(cipher[ri]))
 
-# ------------------------------------------------------
-# 2️⃣0️⃣ 2D Arrays - Initialization (NEW in v0.9)
-# ------------------------------------------------------
-print("▶ 2D array with initialization")
+print("ROT13:", msg, "->", cipher, "->", back)
 
-int grid[2][3] = [[1, 2, 3], [4, 5, 6]]
 
-print("grid[0][0] =", grid[0][0])
-print("grid[0][1] =", grid[0][1])
-print("grid[0][2] =", grid[0][2])
-print("grid[1][0] =", grid[1][0])
-print("grid[1][1] =", grid[1][1])
-print("grid[1][2] =", grid[1][2])
-print()
+# ----------------------------------------------------------------
+#  10. FIBONACCI
+# ----------------------------------------------------------------
 
-# ------------------------------------------------------
-# 2️⃣1️⃣ 2D Arrays - Assignment (NEW in v0.9)
-# ------------------------------------------------------
-print("▶ 2D array element assignment")
+print("")
+print("=== Fibonacci ===")
 
-matrix[0][0] = 100
-matrix[1][2] = 42
-matrix[2][3] = 999
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
 
-print("matrix[0][0] =", matrix[0][0])
-print("matrix[1][2] =", matrix[1][2])
-print("matrix[2][3] =", matrix[2][3])
-print()
+int fibs[10]
+for fi in range(10):
+    fibs[fi] = fib(fi)
 
-# ------------------------------------------------------
-# 2️⃣2️⃣ 2D Arrays - Nested loop iteration (NEW in v0.9)
-# ------------------------------------------------------
-print("▶ Nested loop over 2D array")
+print("First 10 terms:")
+for fi in range(10):
+    print(fi, "->", fibs[fi])
 
-for row in range(len(grid)):
-    for col in range(len(grid[0])):
-        print("grid[", row, "][", col, "] =", grid[row][col])
-print()
 
-# ------------------------------------------------------
-# 2️⃣3️⃣ 2D Arrays - Matrix sum (NEW in v0.9)
-# ------------------------------------------------------
-print("▶ 2D array matrix sum")
+# ----------------------------------------------------------------
 
-int sum_val = 0
-for row in range(len(grid)):
-    for col in range(len(grid[0])):
-        sum_val = sum_val + grid[row][col]
-
-print("Sum of all elements =", sum_val)
-print()
-
-# ------------------------------------------------------
-# 🔚 End
-# ------------------------------------------------------
-print("==============================================")
-print("  End of Vyom v0.9 Demo")
-print("==============================================")
+print("")
+print("================================================")
+print("  Vyom v1.0  --  getvyom.vercel.app")
+print("================================================")
