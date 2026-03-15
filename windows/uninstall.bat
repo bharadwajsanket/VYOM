@@ -1,27 +1,59 @@
 @echo off
 setlocal EnableDelayedExpansion
 title Vyom Uninstaller
-
-:: ================================================
-::  VYOM UNINSTALLER
-::  Removes C:\Vyom and cleans up system PATH
-:: ================================================
-
 color 0C
 cls
+
+:: ================================================
+::  Collect system info
+:: ================================================
+
+for /f "tokens=1* delims=:" %%A in ('systeminfo ^| findstr /B /C:"OS Name"') do set "OS_RAW=%%B"
+set "OS_RAW=!OS_RAW:~1!"
+
+for /f "tokens=1* delims=:" %%A in ('systeminfo ^| findstr /B /C:"OS Version"') do set "VER_RAW=%%B"
+set "VER_RAW=!VER_RAW:~1!"
+
+for /f "tokens=1* delims=:" %%A in ('systeminfo ^| findstr /B /C:"Total Physical Memory"') do set "RAM_RAW=%%B"
+set "RAM_RAW=!RAM_RAW:~1!"
+
+for /f "skip=1 tokens=*" %%A in ('wmic cpu get Name 2^>nul') do (
+    if not defined CPU_NAME if not "%%A"=="" set "CPU_NAME=%%A"
+)
+if not defined CPU_NAME set "CPU_NAME=Unknown"
+
+:: ================================================
+::  Neofetch-style display
+:: ================================================
+
+echo.
+echo    ██╗   ██╗██╗   ██╗ ██████╗ ███╗   ███╗     %USERNAME%@%COMPUTERNAME%
+echo    ██║   ██║╚██╗ ██╔╝██╔═══██╗████╗ ████║     -------------------------
+echo    ██║   ██║ ╚████╔╝ ██║   ██║██╔████╔██║     OS      : !OS_RAW!
+echo    ╚██╗ ██╔╝  ╚██╔╝  ██║   ██║██║╚██╔╝██║     Version : !VER_RAW!
+echo     ╚████╔╝    ██║   ╚██████╔╝██║ ╚═╝ ██║     CPU     : !CPU_NAME!
+echo      ╚═══╝     ╚═╝    ╚═════╝ ╚═╝     ╚═╝     RAM     : !RAM_RAW!
+echo                                                Shell   : cmd.exe
+echo                                                Vyom    : v1.0
+echo.
+echo    https://getvyom.vercel.app
 echo.
 echo  ============================================
-echo   VYOM PROGRAMMING LANGUAGE  -  Uninstaller
+echo   Uninstaller
 echo  ============================================
 echo.
 
 :: ---- Admin check ----
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo  [ERROR] Administrator privileges required.
+    echo  [!] Administrator privileges required.
     echo.
-    echo  Right-click uninstall.bat and select
-    echo  "Run as administrator", then try again.
+    echo      Please run as Administrator to modify System PATH
+    echo.
+    echo      Right-click "uninstall.bat" and select
+    echo      "Run as administrator"
+    echo.
+    echo  ============================================
     echo.
     pause
     exit /b 1
@@ -41,8 +73,10 @@ echo  [1/2] Removing %INSTALL_DIR%...
 if exist "%INSTALL_DIR%" (
     rmdir /S /Q "%INSTALL_DIR%"
     if %errorlevel% neq 0 (
+        echo.
         echo  [ERROR] Could not remove %INSTALL_DIR%
         echo  Close any programs using vyom.exe and try again.
+        echo.
         pause
         exit /b 1
     )
@@ -51,55 +85,25 @@ if exist "%INSTALL_DIR%" (
     echo         %INSTALL_DIR% not found, skipping
 )
 
-:: ---- Step 2: Remove from system PATH ----
-:: Read system PATH from registry directly.
-:: Rebuild it without the Vyom entry.
+:: ---- Step 2: Remove from system PATH using PowerShell ----
 echo  [2/2] Cleaning system PATH...
 
-for /f "tokens=2*" %%A in (
-    'reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul'
-) do set "SYS_PATH=%%B"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$target = 'C:\Vyom'; $regPath = 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment'; $current = (Get-ItemProperty -Path $regPath -Name Path).Path; $parts = $current -split ';' | Where-Object { $_.Trim() -ne '' -and $_.TrimEnd('\') -ne $target.TrimEnd('\') }; $newPath = $parts -join ';'; Set-ItemProperty -Path $regPath -Name Path -Value $newPath -Type ExpandString; Write-Host '        Removed C:\Vyom from system PATH'"
 
-:: Check if Vyom is in PATH at all
-echo !SYS_PATH! | find /i "%INSTALL_DIR%" >nul
 if %errorlevel% neq 0 (
-    echo         Vyom was not in system PATH, nothing to clean
-) else (
-    :: Rebuild PATH without the Vyom entry
-    set "NEW_PATH="
-    set "SEP="
-
-    :: Split on semicolons and rebuild without the Vyom dir
-    for %%E in ("!SYS_PATH:;=" "!") do (
-        set "ENTRY=%%~E"
-        if /i not "!ENTRY!" == "%INSTALL_DIR%" (
-            if defined NEW_PATH (
-                set "NEW_PATH=!NEW_PATH!;!ENTRY!"
-            ) else (
-                set "NEW_PATH=!ENTRY!"
-            )
-        )
-    )
-
-    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" ^
-        /v Path /t REG_EXPAND_SZ /d "!NEW_PATH!" /f >nul 2>&1
-    if %errorlevel% neq 0 (
-        echo  [WARNING] Could not update PATH automatically.
-        echo            Remove %INSTALL_DIR% from PATH manually if needed.
-    ) else (
-        echo         Removed %INSTALL_DIR% from system PATH
-    )
+    echo.
+    echo  [WARNING] Could not update PATH automatically.
+    echo  Manually remove C:\Vyom from your system PATH:
+    echo  Control Panel ^> System ^> Advanced ^> Environment Variables
+    echo.
 )
-
-:: Clean up the marker variable
-reg delete "HKCU\Environment" /v VYOM_INSTALLED /f >nul 2>&1
 
 echo.
 echo  ============================================
 echo   Vyom has been removed.
 echo  ============================================
 echo.
-echo  Restart your terminal to apply PATH changes.
+echo  Restart your terminal to apply changes.
 echo.
 pause
 exit /b 0
