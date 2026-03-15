@@ -1,146 +1,115 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Vyom Installer v1.0
+title Vyom Installer
+
+:: ================================================
+::  VYOM INSTALLER
+::  Installs Vyom to C:\Vyom and updates PATH
+:: ================================================
+
 color 0B
-
-:: =====================================================
-:: VYOM INSTALLER v1.0
-:: =====================================================
-
 cls
 echo.
-echo  =============================================
-echo.
-echo       VYOM PROGRAMMING LANGUAGE
-echo       v1.0 - Strict, Minimal, Honest
-echo.
-echo  =============================================
+echo  ============================================
+echo   VYOM PROGRAMMING LANGUAGE  -  Installer
+echo  ============================================
 echo.
 
-:: ---------------- ADMIN CHECK ----------------
+:: ---- Admin check ----
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo  [!] Administrator privileges required
+    echo  [ERROR] Administrator privileges required.
     echo.
-    echo      Please run as Administrator to update System PATH
-    echo.
-    echo      Right-click "install.bat" and select
-    echo      "Run as administrator"
-    echo.
-    echo  =============================================
+    echo  Right-click install.bat and select
+    echo  "Run as administrator", then try again.
     echo.
     pause
     exit /b 1
 )
 
-echo  Welcome to the Vyom Installer.
-echo  This will install Vyom v1.0 to C:\Vyom
-echo.
-echo  Press any key to continue...
-pause >nul
-echo.
+:: ---- Check vyom.exe exists next to this script ----
+if not exist "%~dp0vyom.exe" (
+    echo  [ERROR] vyom.exe not found.
+    echo  Make sure install.bat is in the same folder as vyom.exe.
+    echo.
+    pause
+    exit /b 1
+)
 
-:: ---------------- PATHS ----------------
 set "INSTALL_DIR=C:\Vyom"
-set "EXAMPLES_DIR=%INSTALL_DIR%\examples"
-set "SRC_EXAMPLES=%~dp0examples"
-set "SRC_EXE=%~dp0vyom.exe"
 
-:: ---------------- CHECKS ----------------
-echo  [1/5] Checking for vyom.exe...
-if not exist "%SRC_EXE%" (
-    echo.
-    echo  [ERROR] vyom.exe not found!
-    echo  Please ensure install.bat is in the same folder as vyom.exe
-    echo.
-    pause
-    exit /b 1
+echo  Installing to: %INSTALL_DIR%
+echo.
+
+:: ---- Step 1: Create directory ----
+echo  [1/4] Creating install directory...
+if not exist "%INSTALL_DIR%" (
+    mkdir "%INSTALL_DIR%"
+    if %errorlevel% neq 0 (
+        echo  [ERROR] Could not create %INSTALL_DIR%
+        pause
+        exit /b 1
+    )
 )
-echo        Found vyom.exe
+echo         OK
 
-:: ---------------- INSTALLATION ----------------
-echo  [2/5] Creating directories...
-if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
-if not exist "%EXAMPLES_DIR%" mkdir "%EXAMPLES_DIR%"
-echo        Created C:\Vyom
-
-echo  [3/6] Copying executable...
-copy /Y "%SRC_EXE%" "%INSTALL_DIR%\vyom.exe" >nul
+:: ---- Step 2: Copy executable ----
+echo  [2/4] Copying vyom.exe...
+copy /Y "%~dp0vyom.exe" "%INSTALL_DIR%\vyom.exe" >nul
 if %errorlevel% neq 0 (
     echo  [ERROR] Failed to copy vyom.exe
     pause
     exit /b 1
 )
-echo        Copied vyom.exe
+echo         OK
 
-:: Copy icon if exists
-set "SRC_ICO=%~dp0assets\vyom.ico"
-if exist "%SRC_ICO%" (
-    copy /Y "%SRC_ICO%" "%INSTALL_DIR%\vyom.ico" >nul
-    echo        Copied vyom.ico
-)
-
-echo  [4/6] Installing examples...
-if exist "%SRC_EXAMPLES%" (
-    xcopy /E /I /Y "%SRC_EXAMPLES%" "%EXAMPLES_DIR%" >nul
-    echo        Copied examples
+:: ---- Step 3: Copy examples if present ----
+echo  [3/4] Copying examples...
+if exist "%~dp0examples" (
+    if not exist "%INSTALL_DIR%\examples" mkdir "%INSTALL_DIR%\examples"
+    xcopy /E /I /Y "%~dp0examples" "%INSTALL_DIR%\examples" >nul
+    echo         OK
 ) else (
-    echo        No examples folder found, skipping
+    echo         No examples folder found, skipping
 )
 
-echo  [5/6] Updating System PATH...
-echo %PATH% | find /i "%INSTALL_DIR%" >nul
-if %errorlevel% neq 0 (
-    setx /M PATH "%PATH%;%INSTALL_DIR%" >nul 2>&1
+:: ---- Step 4: Add to SYSTEM PATH via registry ----
+:: Read the CURRENT system PATH directly from registry.
+:: Do NOT use %PATH% — that includes session variables and can corrupt the entry.
+echo  [4/4] Updating system PATH...
+
+for /f "tokens=2*" %%A in (
+    'reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul'
+) do set "SYS_PATH=%%B"
+
+echo !SYS_PATH! | find /i "%INSTALL_DIR%" >nul
+if %errorlevel% equ 0 (
+    echo         PATH already contains %INSTALL_DIR%, skipping
+) else (
+    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" ^
+        /v Path /t REG_EXPAND_SZ /d "!SYS_PATH!;%INSTALL_DIR%" /f >nul 2>&1
     if %errorlevel% neq 0 (
-        echo        [WARNING] Could not update PATH automatically
-        echo        Please add C:\Vyom to your PATH manually
+        echo  [WARNING] Could not update PATH automatically.
+        echo            Add %INSTALL_DIR% to your PATH manually.
     ) else (
-        echo        Added C:\Vyom to PATH
+        echo         Added %INSTALL_DIR% to system PATH
     )
-) else (
-    echo        PATH already contains C:\Vyom
 )
 
-echo  [6/6] Registering .vy file association...
-:: Register .vy extension
-reg add "HKCR\.vy" /ve /d "VyomFile" /f >nul 2>&1
-reg add "HKCR\VyomFile" /ve /d "Vyom Source File" /f >nul 2>&1
-:: Set icon
-if exist "%INSTALL_DIR%\vyom.ico" (
-    reg add "HKCR\VyomFile\DefaultIcon" /ve /d "%INSTALL_DIR%\vyom.ico" /f >nul 2>&1
-) else (
-    reg add "HKCR\VyomFile\DefaultIcon" /ve /d "%INSTALL_DIR%\vyom.exe,0" /f >nul 2>&1
-)
-:: Set double-click to open in terminal and keep it open
-reg add "HKCR\VyomFile\shell" /ve /d "open" /f >nul 2>&1
-reg add "HKCR\VyomFile\shell\open" /ve /d "Run with Vyom" /f >nul 2>&1
-reg add "HKCR\VyomFile\shell\open\command" /ve /d "cmd.exe /k C:\Vyom\vyom.exe \"%%1\"" /f >nul 2>&1
-echo        Registered .vy file type
-
-:: Refresh icon cache
-ie4uinit.exe -show >nul 2>&1
-echo        Refreshed icon cache
+:: ---- Notify running processes of the PATH change ----
+setx VYOM_INSTALLED 1 >nul 2>&1
 
 echo.
-echo  =============================================
+echo  ============================================
+echo   Installation complete.
 echo.
-echo  SUCCESS! Vyom v1.0 has been installed.
+echo   Path:  %INSTALL_DIR%\vyom.exe
+echo  ============================================
 echo.
-echo  Installation Path:  %INSTALL_DIR%
-echo  Executable:         vyom.exe
-echo  Examples:           %EXAMPLES_DIR%
+echo  IMPORTANT: Restart your terminal before use.
 echo.
-echo  =============================================
-echo.
-echo  IMPORTANT:
-echo  Please RESTART your terminal to use the 'vyom' command.
-echo.
-echo  Try running:
+echo  Then verify with:
 echo    vyom --version
-echo    vyom C:\Vyom\examples\main.vy
-echo.
-echo  =============================================
 echo.
 pause
 exit /b 0

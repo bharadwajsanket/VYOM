@@ -1,94 +1,105 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Vyom Uninstaller v1.0
+title Vyom Uninstaller
+
+:: ================================================
+::  VYOM UNINSTALLER
+::  Removes C:\Vyom and cleans up system PATH
+:: ================================================
+
 color 0C
-
-:: =====================================================
-:: VYOM UNINSTALLER v1.0
-:: =====================================================
-
 cls
 echo.
-echo  =============================================
-echo.
-echo       VYOM UNINSTALLER
-echo       Clean Removal - No Leftovers
-echo.
-echo  =============================================
+echo  ============================================
+echo   VYOM PROGRAMMING LANGUAGE  -  Uninstaller
+echo  ============================================
 echo.
 
-:: ---------------- CONFIRM ----------------
-echo  [?] Are you sure you want to uninstall Vyom?
-echo      This will remove Vyom v1.0 and all examples.
-echo.
-set /p "confirm=      Type Y to continue: "
-if /i not "%confirm%"=="Y" (
+:: ---- Admin check ----
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo  [ERROR] Administrator privileges required.
     echo.
-    echo  Uninstall cancelled.
+    echo  Right-click uninstall.bat and select
+    echo  "Run as administrator", then try again.
     echo.
     pause
-    exit /b 0
+    exit /b 1
 )
 
-echo.
-echo  Uninstalling...
-echo.
-
-:: ---------------- PATHS ----------------
 set "INSTALL_DIR=C:\Vyom"
 
-:: Step 1: Check Install
-echo  [1/3] Checking installation...
-if not exist "%INSTALL_DIR%" (
-    echo        Vyom is not installed at %INSTALL_DIR%
-    goto :cleanup_path
-)
-echo        Found installation at %INSTALL_DIR%
+echo  This will remove Vyom from %INSTALL_DIR%
+echo  and clean up your system PATH.
+echo.
+echo  Press any key to continue, or close this window to cancel...
+pause >nul
+echo.
 
-:: Step 2: Remove Files
-echo  [2/4] Removing files...
-if exist "%INSTALL_DIR%\vyom.exe" del /Q "%INSTALL_DIR%\vyom.exe" >nul 2>&1
-if exist "%INSTALL_DIR%\vyom.ico" del /Q "%INSTALL_DIR%\vyom.ico" >nul 2>&1
-if exist "%INSTALL_DIR%\examples" rmdir /S /Q "%INSTALL_DIR%\examples" >nul 2>&1
-rmdir /S /Q "%INSTALL_DIR%" >nul 2>&1
-echo        Removed C:\Vyom
-
-echo  [3/4] Removing .vy file association...
-reg delete "HKCR\.vy" /f >nul 2>&1
-reg delete "HKCR\VyomFile" /f >nul 2>&1
-echo        Removed .vy file type
-
-:cleanup_path
-:: Step 4: Clean PATH
-echo  [4/4] Cleaning System PATH...
-echo %PATH% | find /i "%INSTALL_DIR%" >nul
-if %errorlevel% equ 0 (
-    powershell -Command ^
-    "$p=[Environment]::GetEnvironmentVariable('Path','Machine'); ^
-     $n=($p.Split(';') | Where-Object { $_ -ne 'C:\Vyom' -and $_ -ne '' }) -join ';'; ^
-     [Environment]::SetEnvironmentVariable('Path',$n,'Machine')" >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo        Removed C:\Vyom from PATH
-    ) else (
-        echo        [WARNING] Could not update PATH automatically
+:: ---- Step 1: Remove install directory ----
+echo  [1/2] Removing %INSTALL_DIR%...
+if exist "%INSTALL_DIR%" (
+    rmdir /S /Q "%INSTALL_DIR%"
+    if %errorlevel% neq 0 (
+        echo  [ERROR] Could not remove %INSTALL_DIR%
+        echo  Close any programs using vyom.exe and try again.
+        pause
+        exit /b 1
     )
+    echo         OK
 ) else (
-    echo        PATH does not contain C:\Vyom
+    echo         %INSTALL_DIR% not found, skipping
 )
 
+:: ---- Step 2: Remove from system PATH ----
+:: Read system PATH from registry directly.
+:: Rebuild it without the Vyom entry.
+echo  [2/2] Cleaning system PATH...
+
+for /f "tokens=2*" %%A in (
+    'reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul'
+) do set "SYS_PATH=%%B"
+
+:: Check if Vyom is in PATH at all
+echo !SYS_PATH! | find /i "%INSTALL_DIR%" >nul
+if %errorlevel% neq 0 (
+    echo         Vyom was not in system PATH, nothing to clean
+) else (
+    :: Rebuild PATH without the Vyom entry
+    set "NEW_PATH="
+    set "SEP="
+
+    :: Split on semicolons and rebuild without the Vyom dir
+    for %%E in ("!SYS_PATH:;=" "!") do (
+        set "ENTRY=%%~E"
+        if /i not "!ENTRY!" == "%INSTALL_DIR%" (
+            if defined NEW_PATH (
+                set "NEW_PATH=!NEW_PATH!;!ENTRY!"
+            ) else (
+                set "NEW_PATH=!ENTRY!"
+            )
+        )
+    )
+
+    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" ^
+        /v Path /t REG_EXPAND_SZ /d "!NEW_PATH!" /f >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo  [WARNING] Could not update PATH automatically.
+        echo            Remove %INSTALL_DIR% from PATH manually if needed.
+    ) else (
+        echo         Removed %INSTALL_DIR% from system PATH
+    )
+)
+
+:: Clean up the marker variable
+reg delete "HKCU\Environment" /v VYOM_INSTALLED /f >nul 2>&1
+
 echo.
-echo  =============================================
+echo  ============================================
+echo   Vyom has been removed.
+echo  ============================================
 echo.
-echo  SUCCESS! Vyom has been removed from your system.
-echo.
-echo  Removed Items:
-echo    - Installation Directory (C:\Vyom)
-echo    - Environment Variable (PATH)
-echo    - Example Files
-echo.
-echo  =============================================
-echo.
-echo  Thank you for using Vyom.
+echo  Restart your terminal to apply PATH changes.
 echo.
 pause
 exit /b 0

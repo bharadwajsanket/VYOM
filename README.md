@@ -1,207 +1,194 @@
 <p align="center">
-  <img src="assets/VYOM-Banner.png" alt="Vyom banner" />
+  <img src="assets/VYOM-Banner.png" alt="Vyom" />
 </p>
 
 <p align="center">
-  Created and maintained by <b>Sanket Bharadwaj</b>
+  <b>A small, explicit scripting language implemented in C.</b>
 </p>
 
 <p align="center">
-  <a href="#status">Version</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#features">Features</a> •
-  <a href="#language-overview">Language Overview</a> •
-  <a href="#philosophy">Philosophy</a>
+  <a href="https://getvyom.vercel.app">Website</a> •
+  <a href="https://github.com/Sanket-Bharadwaj/VYOM">GitHub</a> •
+  <a href="https://github.com/Sanket-Bharadwaj/VYOM/releases/latest">Download</a>
 </p>
+
+---
 
 # Vyom
 
-**A minimal, explicit scripting language with transparent execution semantics.**
+Vyom is a scripting language that executes source code directly.  
+There is no bytecode, no virtual machine, and no runtime optimizer.  
+The interpreter is a single C file — around 2700 lines.
 
-Vyom is a statically-scoped, dynamically-typed scripting language implemented in ISO C (C99-compatible).  
-It executes code directly without virtual machines, bytecode compilation, or runtime optimization layers.
-
-**Design Principle:**  
-If you cannot trace execution line-by-line through the source, the design is wrong.
+**Design rule:** if you cannot trace execution line by line through the source, the design is wrong.
 
 ---
 
 ## Status
 
-**Current Release:** v1.0 — *Hardened Core Release*
-
-```
-Language:     Vyom
-Version:      1.0
-License:      MIT
-Interpreter:  ~2700 lines of C
-Dependencies: None (libc only)
-Platform:     POSIX-compliant systems, Windows
-```
+| | |
+|---|---|
+| Version | 1.0 |
+| Interpreter | ~2700 lines of C (single file) |
+| Dependencies | None — libc only |
+| Platform | POSIX, Windows |
+| License | MIT |
 
 ---
 
 ## Features
 
-### Implemented in v1.0
-- **Integer Division (`//`)** — Truncates toward zero
-- Hardened recursion and control flow
-- Strict parameter scoping
-- String-safe parsing throughout
+**Types**
+- `int`, `double`, `string`
+- Optional explicit type declarations
+- `const` variables
 
-### Implemented in v0.9
-- **2D Fixed-size arrays** (`int a[rows][cols]`)
-- 2D array element access and assignment
-- Enhanced `len()` for 2D arrays (rows/columns)
-- Partial initialization with zero-fill
+**Variables and Expressions**
+- Assignment, arithmetic: `+ - * / // %`
+- Comparisons: `== != < > <= >=`
+- Logic: `and`, `or`, `not` (short-circuit)
+- Operator precedence, parenthesised expressions
 
-### Implemented in v0.8
-- Lexically scoped variables
-- Optional explicit typing: `int`, `double`, `string`
-- `const` variables (immutable)
-- **Fixed-size typed arrays** (numeric & string)
-- Array element assignment with mandatory bounds checking
-- **String indexing (read-only)**
-- **`len()` builtin** for arrays and strings
-- First-class functions (no closures)
-- Numeric and string literals
-- Arithmetic operators: `+ - * / //`
-- Strict type-safe comparisons
-- Boolean logic: `and`, `or`, `not` (short-circuit)
-- Control flow: `if / elif / else`
-- Loops:
-  - `while`
-  - C-style `for`
-  - `for-in range(start, stop, step)`
-- `break` and `continue`
-- Block-local loop scope
-- **`exit(code)` builtin** with cleanup
-- Introspection constants: `__version__`, `__file__`
-- Mandatory `print(...)` with multi-argument support
-- Explicit return semantics
+**Control Flow**
+- `if` / `elif` / `else`
+- `while` loop
+- C-style `for (init; cond; step):`
+- `for i in range(start, stop, step):`
+- `break`, `continue`
 
-### Explicit Non-Goals
-- No dynamic arrays or lists
-- No garbage collection
-- No exceptions
-- No classes / objects
-- No implicit behavior
+**Functions**
+- Parameters, return values, recursion
+- Block-local scope
+- No closures
+
+**Arrays**
+- Fixed-size 1D arrays: `int a[n]`
+- Fixed-size 2D arrays: `int m[rows][cols]`
+- Numeric and string element types
+- Mandatory bounds checking
+- Partial initialisation with zero-fill
+
+**Strings**
+- String literals, indexing (read-only)
+- String comparisons
+
+**Builtins**
+
+| Builtin | Description |
+|---|---|
+| `print(...)` | Print one or more values |
+| `input()` | Read a line from stdin |
+| `len(x)` | Length of array or string |
+| `ascii(c)` | ASCII value of a single character |
+| `char(n)` | Character from ASCII code (0–255) |
+| `concat(a, b)` | Join two strings |
+| `exit(code)` | Exit with status code |
+
+**Safety**
+- Division by zero detected at runtime
+- Array index out of bounds detected at runtime
+- All errors include the source line number
+- Recursion depth limit (prevents C stack overflow)
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-## Installation
+### Windows
 
-### ⊞ Windows
+Download the latest release:  
+**[Download](https://github.com/bharadwajsanket/VYOM/releases/latest)**
 
-[![Download Vyom](https://img.shields.io/badge/Download-Vyom%20Latest-blue?style=for-the-badge)](https://github.com/Sanket-Bharadwaj/VYOM/releases/latest)
+The ZIP includes `vyom.exe`, `install.bat`, and `examples/`.
 
-**Included in the Windows release:**
-- `vyom.exe` — standalone Vyom interpreter
-- `install.bat` — adds Vyom to PATH
-- `uninstall.bat` — removes Vyom from the system
-- `examples/` — sample Vyom programs
-
-**Steps:**
-1. Download and extract the ZIP
-2. Run `install.bat`
+1. Extract the ZIP
+2. Run `install.bat` (right-click → Run as Administrator if prompted)
 3. Restart your terminal
 
-Verify:
-```bash
+```
 vyom --version
 ```
 
-⚠️ **Windows Security Notice**
-
-When running `install.bat`, Windows may show:  
-"Smart App Control blocked this file"
-
-This is expected for unsigned scripts.
-
-To proceed:
-- Right click `install.bat`
-- Properties → Check "Unblock"
-- Run again (preferably as Administrator)
+> If Windows blocks `install.bat`: right-click → Properties → check **Unblock** → run again.
 
 ---
 
-###  macOS / 🐧 Linux
+### macOS / Linux
 
 Build from source:
+
 ```bash
 git clone https://github.com/Sanket-Bharadwaj/VYOM.git
 cd VYOM
-gcc src/vy.c -o vyom
-chmod +x vyom
+gcc -O2 src/vy.c -o vyom -lm
 sudo mv vyom /usr/local/bin/
 ```
 
 Verify:
+
 ```bash
 vyom --version
 ```
 
 ---
 
-## 👋 Hello World
+## Example
 
-Create `hello.vy`:
-```vy
-name = "Vyom"
-print("Hello")
-print(name)
-```
+```vyom
+# Fibonacci
 
-Run:
-```bash
-vyom hello.vy
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+for i in range(8):
+    print(fib(i))
 ```
 
 Output:
-```text
-Hello
-Vyom
+```
+0
+1
+1
+2
+3
+5
+8
+13
 ```
 
 ---
 
-## 📦 2D Arrays (v0.9)
+## Error Messages
 
-Create matrices and grids with fixed-size 2D arrays:
+Errors always include the source line number:
 
-```vy
-# Declaration
-int matrix[3][4]
-
-# Initialization
-int grid[2][3] = [[1, 2, 3], [4, 5, 6]]
-
-# Access and assignment
-matrix[0][0] = 100
-print(grid[1][2])   # 6
-
-# Dimensions
-print(len(grid))      # 2 (rows)
-print(len(grid[0]))   # 3 (cols)
-
-# Iteration
-for row in range(len(grid)):
-    for col in range(len(grid[0])):
-        print(grid[row][col])
+```
+Error (line 7): division by zero
+Error (line 12): array index 10 out of bounds (size 5)
+Error (line 3): undefined variable 'x'
+Error (line 9): function 'add' expects 2 args, got 3
 ```
 
 ---
 
 ## Philosophy
 
-Vyom is designed to be **readable**, **predictable**, and **honest** in execution.
+Vyom is built around one idea: **what you write is exactly what runs.**
 
-- No magic
-- No hidden layers
-- No silent behavior
+- No implicit conversions
+- No hidden allocations
+- No magic behaviour
+- No silent failures
 
-The code you write is the code that runs.
+The language stays small on purpose. Features are added only when they make programs clearer, not to make the language more capable in the abstract.
 
-**Build with clarity. Execute with transparency.**
+The interpreter is a single readable C file. If something behaves unexpectedly, the source is the documentation.
+
+---
+
+<p align="center">
+  Created and maintained by <b>Sanket Bharadwaj</b><br>
+  <a href="https://getvyom.vercel.app">getvyom.vercel.app</a>
+</p>
