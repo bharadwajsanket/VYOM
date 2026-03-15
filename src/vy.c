@@ -24,48 +24,49 @@
  *  CONSTANTS
  * ================================================================ */
 
-#define VYOM_VERSION     "1.0"
-#define MAX_LINES        4096
-#define MAX_LINE         1024
-#define MAX_VARS         512
-#define MAX_FUNCS        256
-#define MAX_CALL_DEPTH   128
-#define MAX_ARGS         16
-#define MAX_ARRAY_TOTAL  65536
-#define MAX_STR          512
+#define VYOM_VERSION "1.0"
+#define MAX_LINES 4096
+#define MAX_LINE 1024
+#define MAX_VARS 512
+#define MAX_FUNCS 256
+#define MAX_CALL_DEPTH 128
+#define MAX_ARGS 16
+#define MAX_ARRAY_TOTAL 65536
+#define MAX_STR 512
 
 /* ================================================================
  *  FORWARD DECLARATIONS
  * ================================================================ */
 
-typedef struct Value  Value;
-typedef struct Var    Var;
-typedef struct Scope  Scope;
-typedef struct Func   Func;
-typedef struct Line   Line;
+typedef struct Value Value;
+typedef struct Var Var;
+typedef struct Scope Scope;
+typedef struct Func Func;
+typedef struct Line Line;
 
-static Value eval_expr  (const char *src);
-static void  exec_stmt  (int line_idx);
-static void  exec_block (int start, int end);
+static Value eval_expr(const char *src);
+static void exec_stmt(int line_idx);
+static void exec_block(int start, int end);
 
 /* ================================================================
  *  SOURCE LINE TABLE
  * ================================================================ */
 
-struct Line {
-    char  text[MAX_LINE];   /* trimmed text (no leading whitespace) */
-    int   indent;           /* leading space count of original line */
-    int   lineno;           /* 1-based source line number           */
+struct Line
+{
+    char text[MAX_LINE]; /* trimmed text (no leading whitespace) */
+    int indent;          /* leading space count of original line */
+    int lineno;          /* 1-based source line number           */
 };
 
-static Line   g_lines[MAX_LINES];
-static int    g_nlines = 0;
+static Line g_lines[MAX_LINES];
+static int g_nlines = 0;
 
 /* current execution line number (for error messages) */
-static int    g_cur_lineno = 0;
+static int g_cur_lineno = 0;
 
 /* source filename */
-static char   g_filename[512] = "";
+static char g_filename[512] = "";
 
 /* ================================================================
  *  ERROR HANDLING
@@ -91,29 +92,37 @@ vyom_error(const char *fmt, ...)
  *  VALUE SYSTEM
  * ================================================================ */
 
-typedef enum { VT_NUM, VT_STR, VT_ARR } ValType;
+typedef enum
+{
+    VT_NUM,
+    VT_STR,
+    VT_ARR
+} ValType;
 
 /*
  * Arrays are heap-allocated and reference-counted via a wrapper so
  * that get/set operations never accidentally free live data.
  */
-typedef struct ArrayData {
-    int       refcnt;
-    ValType   elem_type;
-    int       size;          /* total elements  */
-    int       rows;          /* 0 → 1-D array   */
-    int       cols;          /* 0 → 1-D array   */
-    union {
-        double  *nums;       /* elem_type == VT_NUM */
-        char   **strs;       /* elem_type == VT_STR */
+typedef struct ArrayData
+{
+    int refcnt;
+    ValType elem_type;
+    int size; /* total elements  */
+    int rows; /* 0 → 1-D array   */
+    int cols; /* 0 → 1-D array   */
+    union
+    {
+        double *nums; /* elem_type == VT_NUM */
+        char **strs;  /* elem_type == VT_STR */
     } data;
 } ArrayData;
 
-struct Value {
+struct Value
+{
     ValType type;
-    double  num;
-    char    str[MAX_STR];
-    ArrayData *arr;          /* non-NULL only when type == VT_ARR */
+    double num;
+    char str[MAX_STR];
+    ArrayData *arr; /* non-NULL only when type == VT_ARR */
 };
 
 /* ------------------------------------------------------------------ */
@@ -124,24 +133,30 @@ static ArrayData *
 arr_alloc(ValType elem_type, int rows, int cols)
 {
     ArrayData *a = calloc(1, sizeof(ArrayData));
-    if (!a) vyom_error("out of memory");
+    if (!a)
+        vyom_error("out of memory");
 
     int total = (cols > 0) ? rows * cols : rows;
     if (total <= 0 || total > MAX_ARRAY_TOTAL)
         vyom_error("array size out of range (%d)", total);
 
-    a->refcnt    = 1;
+    a->refcnt = 1;
     a->elem_type = elem_type;
-    a->size      = total;
-    a->rows      = (cols > 0) ? rows : 0;
-    a->cols      = (cols > 0) ? cols : 0;
+    a->size = total;
+    a->rows = (cols > 0) ? rows : 0;
+    a->cols = (cols > 0) ? cols : 0;
 
-    if (elem_type == VT_NUM) {
+    if (elem_type == VT_NUM)
+    {
         a->data.nums = calloc(total, sizeof(double));
-        if (!a->data.nums) vyom_error("out of memory");
-    } else {
+        if (!a->data.nums)
+            vyom_error("out of memory");
+    }
+    else
+    {
         a->data.strs = calloc(total, sizeof(char *));
-        if (!a->data.strs) vyom_error("out of memory");
+        if (!a->data.strs)
+            vyom_error("out of memory");
     }
     return a;
 }
@@ -149,14 +164,19 @@ arr_alloc(ValType elem_type, int rows, int cols)
 static void
 arr_decref(ArrayData *a)
 {
-    if (!a) return;
-    if (--a->refcnt > 0) return;
+    if (!a)
+        return;
+    if (--a->refcnt > 0)
+        return;
 
-    if (a->elem_type == VT_STR && a->data.strs) {
+    if (a->elem_type == VT_STR && a->data.strs)
+    {
         for (int i = 0; i < a->size; i++)
             free(a->data.strs[i]);
         free(a->data.strs);
-    } else if (a->elem_type == VT_NUM) {
+    }
+    else if (a->elem_type == VT_NUM)
+    {
         free(a->data.nums);
     }
     free(a);
@@ -165,46 +185,50 @@ arr_decref(ArrayData *a)
 static void
 arr_incref(ArrayData *a)
 {
-    if (a) a->refcnt++;
+    if (a)
+        a->refcnt++;
 }
 
 /* ================================================================
  *  VARIABLE STORAGE
  * ================================================================ */
 
-struct Var {
-    char      name[64];
-    Value     val;
-    int       is_const;
-    int       is_typed;      /* declared with int/double/string */
+struct Var
+{
+    char name[64];
+    Value val;
+    int is_const;
+    int is_typed; /* declared with int/double/string */
 };
 
 /* ------------------------------------------------------------------ */
 /* Scope stack                                                          */
 /* ------------------------------------------------------------------ */
 
-struct Scope {
-    Var  vars[MAX_VARS];
-    int  nv;
-    int  is_func;            /* top of a function call frame? */
-    int  is_loop;            /* is this a loop block?         */
+struct Scope
+{
+    Var vars[MAX_VARS];
+    int nv;
+    int is_func; /* top of a function call frame? */
+    int is_loop; /* is this a loop block?         */
 };
 
-static Scope  g_scopes[MAX_CALL_DEPTH];
-static int    g_ndepth = 0;     /* number of active scopes */
+static Scope g_scopes[MAX_CALL_DEPTH];
+static int g_ndepth = 0; /* number of active scopes */
 
-static int    g_loop_depth = 0; /* count of active loop scopes */
+static int g_loop_depth = 0; /* count of active loop scopes */
 
 static void
 scope_push(int is_func, int is_loop)
 {
     if (g_ndepth >= MAX_CALL_DEPTH)
         vyom_error("call stack overflow");
-    g_scopes[g_ndepth].nv      = 0;
+    g_scopes[g_ndepth].nv = 0;
     g_scopes[g_ndepth].is_func = is_func;
     g_scopes[g_ndepth].is_loop = is_loop;
     g_ndepth++;
-    if (is_loop) g_loop_depth++;
+    if (is_loop)
+        g_loop_depth++;
 }
 
 static void
@@ -213,7 +237,8 @@ scope_pop(void)
     if (g_ndepth == 0)
         vyom_error("internal: scope underflow");
     Scope *s = &g_scopes[g_ndepth - 1];
-    if (s->is_loop) g_loop_depth--;
+    if (s->is_loop)
+        g_loop_depth--;
     for (int i = 0; i < s->nv; i++)
         arr_decref(s->vars[i].val.arr);
     s->nv = 0;
@@ -246,13 +271,15 @@ static Var *
 var_find(const char *name)
 {
     /* Walk scopes from innermost to outermost */
-    for (int d = g_ndepth - 1; d >= 0; d--) {
+    for (int d = g_ndepth - 1; d >= 0; d--)
+    {
         Scope *s = &g_scopes[d];
         for (int i = s->nv - 1; i >= 0; i--)
             if (!strcmp(s->vars[i].name, name))
                 return &s->vars[i];
         /* Don't cross function boundaries for locals */
-        if (d > 0 && g_scopes[d].is_func) break;
+        if (d > 0 && g_scopes[d].is_func)
+            break;
     }
     /* always check globals */
     Scope *gs = global_scope();
@@ -269,13 +296,15 @@ static int
 var_get(const char *name, Value *out)
 {
     /* built-in constants */
-    if (!strcmp(name, "__version__")) {
+    if (!strcmp(name, "__version__"))
+    {
         out->type = VT_STR;
         strncpy(out->str, VYOM_VERSION, MAX_STR - 1);
         out->arr = NULL;
         return 1;
     }
-    if (!strcmp(name, "__file__")) {
+    if (!strcmp(name, "__file__"))
+    {
         out->type = VT_STR;
         strncpy(out->str, g_filename, MAX_STR - 1);
         out->arr = NULL;
@@ -283,7 +312,8 @@ var_get(const char *name, Value *out)
     }
 
     Var *v = var_find(name);
-    if (!v) return 0;
+    if (!v)
+        return 0;
     *out = v->val;
     arr_incref(out->arr);
     return 1;
@@ -308,18 +338,21 @@ var_set(const char *name, Value val, int is_typed, int is_const)
         vyom_error("cannot reassign built-in constant '%s'", name);
 
     /* Typed declaration: always create/replace in current scope */
-    if (is_typed) {
+    if (is_typed)
+    {
         Scope *s = local_scope();
         /* Check same-scope shadowing legality: if a global with same name
            exists, that's fine for a typed local declaration. */
-        for (int i = 0; i < s->nv; i++) {
-            if (!strcmp(s->vars[i].name, name)) {
+        for (int i = 0; i < s->nv; i++)
+        {
+            if (!strcmp(s->vars[i].name, name))
+            {
                 if (s->vars[i].is_const)
                     vyom_error("cannot reassign const variable '%s'", name);
                 if (s->vars[i].is_typed && s->vars[i].val.type != val.type)
                     vyom_error("type mismatch: cannot change type of '%s'", name);
                 arr_decref(s->vars[i].val.arr);
-                s->vars[i].val      = val;
+                s->vars[i].val = val;
                 s->vars[i].is_const = is_const;
                 arr_incref(val.arr);
                 return;
@@ -328,18 +361,19 @@ var_set(const char *name, Value val, int is_typed, int is_const)
         /* New variable in current scope */
         if (s->nv >= MAX_VARS)
             vyom_error("too many variables in scope");
-        Var *nv       = &s->vars[s->nv++];
+        Var *nv = &s->vars[s->nv++];
         strncpy(nv->name, name, 63);
-        nv->val       = val;
-        nv->is_typed  = 1;
-        nv->is_const  = is_const;
+        nv->val = val;
+        nv->is_typed = 1;
+        nv->is_const = is_const;
         arr_incref(val.arr);
         return;
     }
 
     /* Untyped: find existing variable anywhere in scope chain */
     Var *existing = var_find(name);
-    if (existing) {
+    if (existing)
+    {
         if (existing->is_const)
             vyom_error("cannot reassign const variable '%s'", name);
         if (existing->is_typed && existing->val.type != val.type)
@@ -354,11 +388,11 @@ var_set(const char *name, Value val, int is_typed, int is_const)
     Scope *s = local_scope();
     if (s->nv >= MAX_VARS)
         vyom_error("too many variables in scope");
-    Var *nv       = &s->vars[s->nv++];
+    Var *nv = &s->vars[s->nv++];
     strncpy(nv->name, name, 63);
-    nv->val       = val;
-    nv->is_typed  = 0;
-    nv->is_const  = is_const;
+    nv->val = val;
+    nv->is_typed = 0;
+    nv->is_const = is_const;
     arr_incref(val.arr);
 }
 
@@ -366,16 +400,17 @@ var_set(const char *name, Value val, int is_typed, int is_const)
  *  FUNCTION REGISTRY
  * ================================================================ */
 
-struct Func {
-    char  name[64];
-    char  params[MAX_ARGS][64];
-    int   nparams;
-    int   body_start;   /* index into g_lines[] */
-    int   body_end;
+struct Func
+{
+    char name[64];
+    char params[MAX_ARGS][64];
+    int nparams;
+    int body_start; /* index into g_lines[] */
+    int body_end;
 };
 
-static Func  g_funcs[MAX_FUNCS];
-static int   g_nfuncs = 0;
+static Func g_funcs[MAX_FUNCS];
+static int g_nfuncs = 0;
 
 static Func *
 func_find(const char *name)
@@ -390,11 +425,11 @@ func_find(const char *name)
  *  CONTROL FLOW FLAGS
  * ================================================================ */
 
-static int    g_ret_flag  = 0;
-static Value  g_ret_val   = {0};
-static int    g_brk_flag  = 0;
-static int    g_cont_flag = 0;
-static int    g_func_depth = 0;    /* counts active function call frames */
+static int g_ret_flag = 0;
+static Value g_ret_val = {0};
+static int g_brk_flag = 0;
+static int g_cont_flag = 0;
+static int g_func_depth = 0; /* counts active function call frames */
 #define MAX_FUNC_DEPTH 64
 
 /* ================================================================
@@ -410,7 +445,7 @@ static int
 block_end(int i)
 {
     int base = g_lines[i].indent;
-    int j    = i + 1;
+    int j = i + 1;
     while (j < g_nlines && g_lines[j].indent > base)
         j++;
     return j;
@@ -423,7 +458,8 @@ block_end(int i)
 static const char *
 skip_ws(const char *p)
 {
-    while (*p == ' ' || *p == '\t') p++;
+    while (*p == ' ' || *p == '\t')
+        p++;
     return p;
 }
 
@@ -433,10 +469,13 @@ skip_ws(const char *p)
 static void
 trimcpy(char *dst, const char *s, const char *e)
 {
-    while (s < e && isspace((unsigned char)*s))  s++;
-    while (e > s && isspace((unsigned char)*(e-1))) e--;
+    while (s < e && isspace((unsigned char)*s))
+        s++;
+    while (e > s && isspace((unsigned char)*(e - 1)))
+        e--;
     int n = (int)(e - s);
-    if (n < 0) n = 0;
+    if (n < 0)
+        n = 0;
     memcpy(dst, s, n);
     dst[n] = '\0';
 }
@@ -450,19 +489,37 @@ trimcpy(char *dst, const char *s, const char *e)
 static const char *
 scan_to(const char *p, char target)
 {
-    int depth  = 0;
+    int depth = 0;
     int in_str = 0;
-    while (*p) {
-        if (*p == '"') { in_str = !in_str; p++; continue; }
-        if (in_str)    { p++; continue; }
-        if (*p == '(' || *p == '[') { depth++; p++; continue; }
-        if (*p == ')' || *p == ']') {
-            if (depth == 0) return p;
+    while (*p)
+    {
+        if (*p == '"')
+        {
+            in_str = !in_str;
+            p++;
+            continue;
+        }
+        if (in_str)
+        {
+            p++;
+            continue;
+        }
+        if (*p == '(' || *p == '[')
+        {
+            depth++;
+            p++;
+            continue;
+        }
+        if (*p == ')' || *p == ']')
+        {
+            if (depth == 0)
+                return p;
             depth--;
             p++;
             continue;
         }
-        if (depth == 0 && *p == target) return p;
+        if (depth == 0 && *p == target)
+            return p;
         p++;
     }
     return NULL;
@@ -476,30 +533,55 @@ scan_to(const char *p, char target)
 static int
 split_args(const char *src, char argv[][MAX_LINE], int maxargs)
 {
-    int    n = 0;
+    int n = 0;
     const char *p = src;
 
-    while (*p) {
+    while (*p)
+    {
         p = skip_ws(p);
-        if (!*p) break;
+        if (!*p)
+            break;
 
         /* find next comma at depth 0 */
-        int    depth  = 0;
-        int    in_str = 0;
+        int depth = 0;
+        int in_str = 0;
         const char *start = p;
 
-        while (*p) {
-            if (*p == '"') { in_str = !in_str; p++; continue; }
-            if (in_str)    { p++; continue; }
-            if (*p == '(' || *p == '[') { depth++; p++; continue; }
-            if (*p == ')' || *p == ']') { depth--; p++; continue; }
-            if (depth == 0 && *p == ',') break;
+        while (*p)
+        {
+            if (*p == '"')
+            {
+                in_str = !in_str;
+                p++;
+                continue;
+            }
+            if (in_str)
+            {
+                p++;
+                continue;
+            }
+            if (*p == '(' || *p == '[')
+            {
+                depth++;
+                p++;
+                continue;
+            }
+            if (*p == ')' || *p == ']')
+            {
+                depth--;
+                p++;
+                continue;
+            }
+            if (depth == 0 && *p == ',')
+                break;
             p++;
         }
 
-        if (n >= maxargs) vyom_error("too many arguments (max %d)", maxargs);
+        if (n >= maxargs)
+            vyom_error("too many arguments (max %d)", maxargs);
         trimcpy(argv[n++], start, p);
-        if (*p == ',') p++;
+        if (*p == ',')
+            p++;
     }
     return n;
 }
@@ -531,7 +613,7 @@ make_num(double n)
 {
     Value v = {0};
     v.type = VT_NUM;
-    v.num  = n;
+    v.num = n;
     return v;
 }
 
@@ -564,129 +646,182 @@ eval_primary(const char *src)
 {
     const char *p = skip_ws(src);
 
-    if (!*p) vyom_error("empty expression");
+    if (!*p)
+        vyom_error("empty expression");
 
     /* ---- Parenthesised expression ---- */
-    if (*p == '(') {
+    if (*p == '(')
+    {
         /* find matching ')' */
-        int depth  = 1;
+        int depth = 1;
         int in_str = 0;
         const char *q = p + 1;
-        while (*q && depth) {
-            if (*q == '"') { in_str = !in_str; q++; continue; }
-            if (in_str)    { q++; continue; }
-            if (*q == '(') depth++;
-            else if (*q == ')') depth--;
-            if (depth) q++;
+        while (*q && depth)
+        {
+            if (*q == '"')
+            {
+                in_str = !in_str;
+                q++;
+                continue;
+            }
+            if (in_str)
+            {
+                q++;
+                continue;
+            }
+            if (*q == '(')
+                depth++;
+            else if (*q == ')')
+                depth--;
+            if (depth)
+                q++;
         }
-        if (depth) vyom_error("unmatched parentheses");
+        if (depth)
+            vyom_error("unmatched parentheses");
         char inner[MAX_LINE];
         trimcpy(inner, p + 1, q);
         return eval_expr(inner);
     }
 
     /* ---- Unary not ---- */
-    if (!strncmp(p, "not", 3) && !is_ident_char(p[3])) {
+    if (!strncmp(p, "not", 3) && !is_ident_char(p[3]))
+    {
         Value v = eval_at_prec(p + 3, 6);
         return make_num(v.num == 0.0 ? 1.0 : 0.0);
     }
 
     /* ---- Unary minus ---- */
     if (*p == '-' && (p[1] == '(' || isdigit((unsigned char)p[1]) ||
-                       is_ident_char(p[1]))) {
+                      is_ident_char(p[1])))
+    {
         Value v = eval_at_prec(p + 1, 6);
-        if (v.type != VT_NUM) vyom_error("unary minus on non-numeric value");
+        if (v.type != VT_NUM)
+            vyom_error("unary minus on non-numeric value");
         return make_num(-v.num);
     }
 
     /* ---- String literal ---- */
-    if (*p == '"') {
+    if (*p == '"')
+    {
         /* find closing unescaped '"' */
         const char *q = p + 1;
         char buf[MAX_STR];
-        int  bi = 0;
-        while (*q && *q != '"') {
-            if (*q == '\\') {
+        int bi = 0;
+        while (*q && *q != '"')
+        {
+            if (*q == '\\')
+            {
                 q++;
-                switch (*q) {
-                    case 'n':  buf[bi++] = '\n'; break;
-                    case 't':  buf[bi++] = '\t'; break;
-                    case '"':  buf[bi++] = '"';  break;
-                    case '\\': buf[bi++] = '\\'; break;
-                    default:   buf[bi++] = '\\'; buf[bi++] = *q; break;
+                switch (*q)
+                {
+                case 'n':
+                    buf[bi++] = '\n';
+                    break;
+                case 't':
+                    buf[bi++] = '\t';
+                    break;
+                case '"':
+                    buf[bi++] = '"';
+                    break;
+                case '\\':
+                    buf[bi++] = '\\';
+                    break;
+                default:
+                    buf[bi++] = '\\';
+                    buf[bi++] = *q;
+                    break;
                 }
                 q++;
-            } else {
-                if (bi >= MAX_STR - 1) vyom_error("string literal too long");
+            }
+            else
+            {
+                if (bi >= MAX_STR - 1)
+                    vyom_error("string literal too long");
                 buf[bi++] = *q++;
             }
         }
-        if (*q != '"') vyom_error("unterminated string literal");
+        if (*q != '"')
+            vyom_error("unterminated string literal");
         buf[bi] = '\0';
         return make_str(buf);
     }
 
     /* ---- Numeric literal ---- */
     if (isdigit((unsigned char)*p) ||
-        (*p == '-' && isdigit((unsigned char)p[1]))) {
+        (*p == '-' && isdigit((unsigned char)p[1])))
+    {
         char *end;
         double n = strtod(p, &end);
         return make_num(n);
     }
 
     /* ---- Identifier, function call, array index ---- */
-    if (is_ident_char(*p) || *p == '_') {
+    if (is_ident_char(*p) || *p == '_')
+    {
         /* extract identifier */
         const char *id_start = p;
-        while (is_ident_char(*p)) p++;
+        while (is_ident_char(*p))
+            p++;
         char name[64];
-        if (p - id_start >= 64) vyom_error("identifier too long");
+        if (p - id_start >= 64)
+            vyom_error("identifier too long");
         memcpy(name, id_start, p - id_start);
         name[p - id_start] = '\0';
 
         p = skip_ws(p);
 
         /* ---- len() builtin ---- */
-        if (!strcmp(name, "len") && *p == '(') {
+        if (!strcmp(name, "len") && *p == '(')
+        {
             /* find matching ')' */
             const char *rp = scan_to(p + 1, ')');
-            if (!rp) vyom_error("unmatched parentheses in len()");
+            if (!rp)
+                vyom_error("unmatched parentheses in len()");
             char arg[MAX_LINE];
             trimcpy(arg, p + 1, rp);
 
             /* len(arr[i]) → column count for 2D */
             char *bracket = strchr(arg, '[');
-            if (bracket) {
+            if (bracket)
+            {
                 char vname[64];
                 trimcpy(vname, arg, bracket);
                 Value av;
-                if (!var_get(vname, &av)) vyom_error("undefined variable '%s'", vname);
-                if (av.type != VT_ARR)    vyom_error("len() requires array");
-                if (av.arr->cols == 0)    vyom_error("len(arr[i]) requires 2D array");
+                if (!var_get(vname, &av))
+                    vyom_error("undefined variable '%s'", vname);
+                if (av.type != VT_ARR)
+                    vyom_error("len() requires array");
+                if (av.arr->cols == 0)
+                    vyom_error("len(arr[i]) requires 2D array");
                 double r = (double)av.arr->cols;
                 arr_decref(av.arr);
                 return make_num(r);
             }
 
             Value av;
-            if (!var_get(arg, &av)) vyom_error("undefined variable '%s'", arg);
-            if (av.type == VT_ARR) {
+            if (!var_get(arg, &av))
+                vyom_error("undefined variable '%s'", arg);
+            if (av.type == VT_ARR)
+            {
                 double r = (av.arr->cols > 0)
-                           ? (double)av.arr->rows
-                           : (double)av.arr->size;
+                               ? (double)av.arr->rows
+                               : (double)av.arr->size;
                 arr_decref(av.arr);
                 return make_num(r);
             }
-            if (av.type == VT_STR) {
+            if (av.type == VT_STR)
+            {
                 return make_num((double)strlen(av.str));
             }
             vyom_error("len() requires array or string");
         }
 
         /* ---- ascii() builtin ---- */
-        if (!strcmp(name, "ascii") && *p == '(') {
+        if (!strcmp(name, "ascii") && *p == '(')
+        {
             const char *rp = scan_to(p + 1, ')');
-            if (!rp) vyom_error("unmatched parentheses in ascii()");
+            if (!rp)
+                vyom_error("unmatched parentheses in ascii()");
             char arg[MAX_LINE];
             trimcpy(arg, p + 1, rp);
             Value av = eval_expr(arg);
@@ -698,9 +833,11 @@ eval_primary(const char *src)
         }
 
         /* ---- char() builtin ---- */
-        if (!strcmp(name, "char") && *p == '(') {
+        if (!strcmp(name, "char") && *p == '(')
+        {
             const char *rp = scan_to(p + 1, ')');
-            if (!rp) vyom_error("unmatched parentheses in char()");
+            if (!rp)
+                vyom_error("unmatched parentheses in char()");
             char arg[MAX_LINE];
             trimcpy(arg, p + 1, rp);
             Value av = eval_expr(arg);
@@ -709,18 +846,21 @@ eval_primary(const char *src)
             int code = (int)av.num;
             if (code < 0 || code > 255)
                 vyom_error("char() argument out of range");
-            char buf[2] = { (char)code, '\0' };
+            char buf[2] = {(char)code, '\0'};
             return make_str(buf);
         }
 
         /* ---- input() builtin ---- */
-        if (!strcmp(name, "input") && *p == '(') {
+        if (!strcmp(name, "input") && *p == '(')
+        {
             const char *rp = scan_to(p + 1, ')');
-            if (!rp) vyom_error("unmatched parentheses in input()");
+            if (!rp)
+                vyom_error("unmatched parentheses in input()");
             char ibuf[MAX_STR];
-            if (fgets(ibuf, sizeof(ibuf), stdin)) {
+            if (fgets(ibuf, sizeof(ibuf), stdin))
+            {
                 int n = (int)strlen(ibuf);
-                while (n > 0 && (ibuf[n-1] == '\n' || ibuf[n-1] == '\r'))
+                while (n > 0 && (ibuf[n - 1] == '\n' || ibuf[n - 1] == '\r'))
                     ibuf[--n] = '\0';
                 return make_str(ibuf);
             }
@@ -729,9 +869,11 @@ eval_primary(const char *src)
 
         /* ---- concat(a, b) builtin ---- */
         /* Joins two strings: concat("hello", "world") → "helloworld" */
-        if (!strcmp(name, "concat") && *p == '(') {
+        if (!strcmp(name, "concat") && *p == '(')
+        {
             const char *rp = scan_to(p + 1, ')');
-            if (!rp) vyom_error("unmatched parentheses in concat()");
+            if (!rp)
+                vyom_error("unmatched parentheses in concat()");
             char args_buf[MAX_LINE];
             trimcpy(args_buf, p + 1, rp);
             char argv[MAX_ARGS][MAX_LINE];
@@ -740,8 +882,10 @@ eval_primary(const char *src)
                 vyom_error("concat() requires exactly 2 arguments");
             Value a = eval_expr(argv[0]);
             Value b = eval_expr(argv[1]);
-            if (a.type != VT_STR) vyom_error("concat() argument 1 must be a string");
-            if (b.type != VT_STR) vyom_error("concat() argument 2 must be a string");
+            if (a.type != VT_STR)
+                vyom_error("concat() argument 1 must be a string");
+            if (b.type != VT_STR)
+                vyom_error("concat() argument 2 must be a string");
             char result[MAX_STR];
             int alen = (int)strlen(a.str);
             int blen = (int)strlen(b.str);
@@ -754,18 +898,21 @@ eval_primary(const char *src)
         }
 
         /* ---- Function call ---- */
-        if (*p == '(') {
+        if (*p == '(')
+        {
             Func *fn = func_find(name);
-            if (!fn) vyom_error("undefined function '%s'", name);
+            if (!fn)
+                vyom_error("undefined function '%s'", name);
 
             const char *rp = scan_to(p + 1, ')');
-            if (!rp) vyom_error("unmatched parentheses calling '%s'", name);
+            if (!rp)
+                vyom_error("unmatched parentheses calling '%s'", name);
 
             char args_str[MAX_LINE];
             trimcpy(args_str, p + 1, rp);
 
             char argv[MAX_ARGS][MAX_LINE];
-            int  argc = (*args_str) ? split_args(args_str, argv, MAX_ARGS) : 0;
+            int argc = (*args_str) ? split_args(args_str, argv, MAX_ARGS) : 0;
 
             if (argc != fn->nparams)
                 vyom_error("function '%s' expects %d args, got %d",
@@ -773,14 +920,15 @@ eval_primary(const char *src)
 
             /* evaluate arguments before pushing scope */
             Value argvals[MAX_ARGS];
-            for (int i = 0; i < argc; i++) {
+            for (int i = 0; i < argc; i++)
+            {
                 argvals[i] = eval_expr(argv[i]);
             }
 
             /* save flags */
-            int   old_ret  = g_ret_flag;
-            int   old_brk  = g_brk_flag;
-            int   old_cont = g_cont_flag;
+            int old_ret = g_ret_flag;
+            int old_brk = g_brk_flag;
+            int old_cont = g_cont_flag;
             Value old_rval = g_ret_val;
             g_ret_flag = g_brk_flag = g_cont_flag = 0;
 
@@ -790,7 +938,8 @@ eval_primary(const char *src)
             g_func_depth++;
             scope_push(1, 0);
 
-            for (int i = 0; i < argc; i++) {
+            for (int i = 0; i < argc; i++)
+            {
                 /* parameters are untyped locals */
                 var_set(fn->params[i], argvals[i], 0, 0);
                 /* decref: var_set took ownership via incref */
@@ -803,12 +952,12 @@ eval_primary(const char *src)
             g_func_depth--;
 
             Value result = g_ret_val;
-            int   got_return = g_ret_flag;
+            int got_return = g_ret_flag;
 
-            g_ret_flag  = old_ret;
-            g_brk_flag  = old_brk;
+            g_ret_flag = old_ret;
+            g_brk_flag = old_brk;
             g_cont_flag = old_cont;
-            g_ret_val   = old_rval;
+            g_ret_val = old_rval;
 
             if (!got_return)
                 vyom_error("function '%s' missing return statement", name);
@@ -817,28 +966,34 @@ eval_primary(const char *src)
         }
 
         /* ---- Array / string indexing ---- */
-        if (*p == '[') {
+        if (*p == '[')
+        {
             Value base;
-            if (!var_get(name, &base)) vyom_error("undefined variable '%s'", name);
+            if (!var_get(name, &base))
+                vyom_error("undefined variable '%s'", name);
 
             /* first index */
             const char *rb = scan_to(p + 1, ']');
-            if (!rb) vyom_error("unmatched '[' in index expression");
+            if (!rb)
+                vyom_error("unmatched '[' in index expression");
             char idx_expr[MAX_LINE];
             trimcpy(idx_expr, p + 1, rb);
             Value iv = eval_expr(idx_expr);
-            if (iv.type != VT_NUM) vyom_error("array index must be numeric");
+            if (iv.type != VT_NUM)
+                vyom_error("array index must be numeric");
             int idx1 = (int)iv.num;
-            if (iv.num != (double)idx1) vyom_error("array index must be integer");
+            if (iv.num != (double)idx1)
+                vyom_error("array index must be integer");
 
             p = skip_ws(rb + 1);
 
             /* string indexing */
-            if (base.type == VT_STR) {
+            if (base.type == VT_STR)
+            {
                 int slen = (int)strlen(base.str);
                 if (idx1 < 0 || idx1 >= slen)
                     vyom_error("string index %d out of bounds (length %d)", idx1, slen);
-                char ch[2] = { base.str[idx1], '\0' };
+                char ch[2] = {base.str[idx1], '\0'};
                 return make_str(ch);
             }
 
@@ -848,14 +1003,18 @@ eval_primary(const char *src)
             ArrayData *a = base.arr;
 
             /* 2-D array: expect second [j] */
-            if (a->cols > 0) {
-                if (*p != '[') vyom_error("2D array requires two indices");
+            if (a->cols > 0)
+            {
+                if (*p != '[')
+                    vyom_error("2D array requires two indices");
                 const char *rb2 = scan_to(p + 1, ']');
-                if (!rb2) vyom_error("unmatched '[' in 2D index");
+                if (!rb2)
+                    vyom_error("unmatched '[' in 2D index");
                 char idx2_expr[MAX_LINE];
                 trimcpy(idx2_expr, p + 1, rb2);
                 Value iv2 = eval_expr(idx2_expr);
-                if (iv2.type != VT_NUM) vyom_error("array index must be numeric");
+                if (iv2.type != VT_NUM)
+                    vyom_error("array index must be numeric");
                 int idx2 = (int)iv2.num;
 
                 if (idx1 < 0 || idx1 >= a->rows)
@@ -873,9 +1032,12 @@ eval_primary(const char *src)
                 vyom_error("array index %d out of bounds (size %d)", idx1, a->size);
 
             Value result = {0};
-            if (a->elem_type == VT_NUM) {
+            if (a->elem_type == VT_NUM)
+            {
                 result = make_num(a->data.nums[idx1]);
-            } else {
+            }
+            else
+            {
                 const char *s = a->data.strs[idx1] ? a->data.strs[idx1] : "";
                 result = make_str(s);
             }
@@ -912,18 +1074,40 @@ eval_primary(const char *src)
 static const char *
 find_keyword_op(const char *s, const char *kw, int kwlen)
 {
-    int depth  = 0;
+    int depth = 0;
     int in_str = 0;
     const char *p = s;
 
-    while (*p) {
-        if (*p == '"') { in_str = !in_str; p++; continue; }
-        if (in_str)    { p++; continue; }
-        if (*p == '(' || *p == '[') { depth++; p++; continue; }
-        if (*p == ')' || *p == ']') { depth--; p++; continue; }
+    while (*p)
+    {
+        if (*p == '"')
+        {
+            in_str = !in_str;
+            p++;
+            continue;
+        }
+        if (in_str)
+        {
+            p++;
+            continue;
+        }
+        if (*p == '(' || *p == '[')
+        {
+            depth++;
+            p++;
+            continue;
+        }
+        if (*p == ')' || *p == ']')
+        {
+            depth--;
+            p++;
+            continue;
+        }
 
-        if (depth == 0) {
-            if (!strncmp(p, kw, kwlen) && !is_ident_char(p[kwlen])) {
+        if (depth == 0)
+        {
+            if (!strncmp(p, kw, kwlen) && !is_ident_char(p[kwlen]))
+            {
                 /* also verify it's not in the middle of an identifier */
                 if (p == s || !is_ident_char(p[-1]))
                     return p;
@@ -940,76 +1124,116 @@ find_keyword_op(const char *s, const char *kw, int kwlen)
  * `ops` is a null-terminated list of single chars to look for.
  * `skip_eq_follow` = 1 means skip `==`, `!=`, `<=`, `>=`.
  */
-typedef struct { const char *pos; int len; char op1; char op2; } OpMatch;
+typedef struct
+{
+    const char *pos;
+    int len;
+    char op1;
+    char op2;
+} OpMatch;
 
 static OpMatch
 find_binary_op_rtl(const char *s, int level)
 {
-    OpMatch none = { NULL, 0, 0, 0 };
-    int   len    = (int)strlen(s);
-    int   depth  = 0;
-    int   in_str = 0;
+    OpMatch none = {NULL, 0, 0, 0};
+    int len = (int)strlen(s);
+    int depth = 0;
+    int in_str = 0;
 
     /* build reverse scan */
-    for (int i = len - 1; i >= 0; i--) {
+    for (int i = len - 1; i >= 0; i--)
+    {
         char c = s[i];
 
         /* string tracking (very simplified — fine for valid source) */
-        if (c == '"') { in_str = !in_str; continue; }
-        if (in_str)   continue;
+        if (c == '"')
+        {
+            in_str = !in_str;
+            continue;
+        }
+        if (in_str)
+            continue;
 
-        if (c == ')' || c == ']') { depth++; continue; }
-        if (c == '(' || c == '[') { depth--; continue; }
+        if (c == ')' || c == ']')
+        {
+            depth++;
+            continue;
+        }
+        if (c == '(' || c == '[')
+        {
+            depth--;
+            continue;
+        }
 
-        if (depth != 0) continue;
+        if (depth != 0)
+            continue;
 
         /* Level 4: + and - (binary) */
-        if (level == 4 && (c == '+' || c == '-')) {
+        if (level == 4 && (c == '+' || c == '-'))
+        {
             /* skip if this is a unary operator:
                preceded only by whitespace or another operator */
             int j = i - 1;
-            while (j >= 0 && (s[j] == ' ' || s[j] == '\t')) j--;
-            if (j < 0) continue; /* unary at start */
+            while (j >= 0 && (s[j] == ' ' || s[j] == '\t'))
+                j--;
+            if (j < 0)
+                continue; /* unary at start */
             char prev = s[j];
             if (prev == '+' || prev == '-' || prev == '*' || prev == '/' ||
                 prev == '(' || prev == '[' || prev == ',' || prev == '%')
                 continue;
-            OpMatch m = { s + i, 1, c, 0 };
+            OpMatch m = {s + i, 1, c, 0};
             return m;
         }
 
         /* Level 5: * / // % */
-        if (level == 5) {
-            if (c == '*') { OpMatch m = { s + i, 1, '*', 0 }; return m; }
-            if (c == '%') { OpMatch m = { s + i, 1, '%', 0 }; return m; }
-            if (c == '/') {
+        if (level == 5)
+        {
+            if (c == '*')
+            {
+                OpMatch m = {s + i, 1, '*', 0};
+                return m;
+            }
+            if (c == '%')
+            {
+                OpMatch m = {s + i, 1, '%', 0};
+                return m;
+            }
+            if (c == '/')
+            {
                 /* Check for // (integer division) */
-                if (i > 0 && s[i-1] == '/') {
-                    OpMatch m = { s + i - 1, 2, '/', '/' };
+                if (i > 0 && s[i - 1] == '/')
+                {
+                    OpMatch m = {s + i - 1, 2, '/', '/'};
                     return m;
                 }
                 /* plain / — but make sure we didn't just pass the second / of // */
-                if (i + 1 < len && s[i+1] == '/') continue;
-                OpMatch m = { s + i, 1, '/', 0 };
+                if (i + 1 < len && s[i + 1] == '/')
+                    continue;
+                OpMatch m = {s + i, 1, '/', 0};
                 return m;
             }
         }
 
         /* Level 3: comparisons */
-        if (level == 3) {
-            if (i + 1 < len) {
-                if ((c == '=' && s[i+1] == '=') ||
-                    (c == '!' && s[i+1] == '=') ||
-                    (c == '<' && s[i+1] == '=') ||
-                    (c == '>' && s[i+1] == '=')) {
-                    OpMatch m = { s + i, 2, c, s[i+1] };
+        if (level == 3)
+        {
+            if (i + 1 < len)
+            {
+                if ((c == '=' && s[i + 1] == '=') ||
+                    (c == '!' && s[i + 1] == '=') ||
+                    (c == '<' && s[i + 1] == '=') ||
+                    (c == '>' && s[i + 1] == '='))
+                {
+                    OpMatch m = {s + i, 2, c, s[i + 1]};
                     return m;
                 }
             }
             /* single-char < > — make sure next char isn't = */
             if ((c == '<' || c == '>') &&
-                (i + 1 >= len || s[i+1] != '=')) {
-                OpMatch m = { s + i, 1, c, 0 };
+                (i + 1 >= len || s[i + 1] != '='))
+            {
+                OpMatch m = {s + i, 1, c, 0};
                 return m;
             }
         }
@@ -1030,85 +1254,112 @@ eval_at_prec(const char *raw, int prec)
     const char *src = skip_ws(src_buf);
 
     /* -- Level 0: or -- */
-    if (prec <= 0) {
+    if (prec <= 0)
+    {
         const char *op = find_keyword_op(src, "or", 2);
-        if (op) {
+        if (op)
+        {
             char left[MAX_LINE], right[MAX_LINE];
-            trimcpy(left,  src, op);
+            trimcpy(left, src, op);
             trimcpy(right, op + 2, src + strlen(src));
-            Value lv = eval_at_prec(left,  0);
-            if (lv.num != 0.0) return make_num(1.0);
+            Value lv = eval_at_prec(left, 0);
+            if (lv.num != 0.0)
+                return make_num(1.0);
             Value rv = eval_at_prec(right, 0);
             return make_num(rv.num != 0.0 ? 1.0 : 0.0);
         }
     }
 
     /* -- Level 1: and -- */
-    if (prec <= 1) {
+    if (prec <= 1)
+    {
         const char *op = find_keyword_op(src, "and", 3);
-        if (op) {
+        if (op)
+        {
             char left[MAX_LINE], right[MAX_LINE];
-            trimcpy(left,  src, op);
+            trimcpy(left, src, op);
             trimcpy(right, op + 3, src + strlen(src));
-            Value lv = eval_at_prec(left,  1);
-            if (lv.num == 0.0) return make_num(0.0);
+            Value lv = eval_at_prec(left, 1);
+            if (lv.num == 0.0)
+                return make_num(0.0);
             Value rv = eval_at_prec(right, 1);
             return make_num(rv.num != 0.0 ? 1.0 : 0.0);
         }
     }
 
     /* -- Level 2: not -- */
-    if (prec <= 2) {
+    if (prec <= 2)
+    {
         const char *p = skip_ws(src);
-        if (!strncmp(p, "not", 3) && !is_ident_char(p[3])) {
+        if (!strncmp(p, "not", 3) && !is_ident_char(p[3]))
+        {
             Value v = eval_at_prec(p + 3, 2);
             return make_num(v.num == 0.0 ? 1.0 : 0.0);
         }
     }
 
     /* -- Level 3: comparisons -- */
-    if (prec <= 3) {
+    if (prec <= 3)
+    {
         OpMatch m = find_binary_op_rtl(src, 3);
-        if (m.pos) {
+        if (m.pos)
+        {
             char left[MAX_LINE], right[MAX_LINE];
-            trimcpy(left,  src,         m.pos);
+            trimcpy(left, src, m.pos);
             trimcpy(right, m.pos + m.len, src + strlen(src));
 
             /* For comparisons we need typed evaluation */
-            Value lv = eval_at_prec(left,  4);
+            Value lv = eval_at_prec(left, 4);
             Value rv = eval_at_prec(right, 4);
 
             if (lv.type != rv.type)
                 vyom_error("cannot compare different types");
 
-            if (lv.type == VT_STR) {
+            if (lv.type == VT_STR)
+            {
                 int cmp = strcmp(lv.str, rv.str);
-                if (m.op1 == '=' && m.op2 == '=') return make_num(cmp == 0);
-                if (m.op1 == '!' && m.op2 == '=') return make_num(cmp != 0);
-                if (m.op1 == '<' && m.op2 == '=') return make_num(cmp <= 0);
-                if (m.op1 == '>' && m.op2 == '=') return make_num(cmp >= 0);
-                if (m.op1 == '<') return make_num(cmp <  0);
-                if (m.op1 == '>') return make_num(cmp >  0);
-            } else {
+                if (m.op1 == '=' && m.op2 == '=')
+                    return make_num(cmp == 0);
+                if (m.op1 == '!' && m.op2 == '=')
+                    return make_num(cmp != 0);
+                if (m.op1 == '<' && m.op2 == '=')
+                    return make_num(cmp <= 0);
+                if (m.op1 == '>' && m.op2 == '=')
+                    return make_num(cmp >= 0);
+                if (m.op1 == '<')
+                    return make_num(cmp < 0);
+                if (m.op1 == '>')
+                    return make_num(cmp > 0);
+            }
+            else
+            {
                 double a = lv.num, b = rv.num;
-                if (m.op1 == '=' && m.op2 == '=') return make_num(a == b);
-                if (m.op1 == '!' && m.op2 == '=') return make_num(a != b);
-                if (m.op1 == '<' && m.op2 == '=') return make_num(a <= b);
-                if (m.op1 == '>' && m.op2 == '=') return make_num(a >= b);
-                if (m.op1 == '<') return make_num(a <  b);
-                if (m.op1 == '>') return make_num(a >  b);
+                if (m.op1 == '=' && m.op2 == '=')
+                    return make_num(a == b);
+                if (m.op1 == '!' && m.op2 == '=')
+                    return make_num(a != b);
+                if (m.op1 == '<' && m.op2 == '=')
+                    return make_num(a <= b);
+                if (m.op1 == '>' && m.op2 == '=')
+                    return make_num(a >= b);
+                if (m.op1 == '<')
+                    return make_num(a < b);
+                if (m.op1 == '>')
+                    return make_num(a > b);
             }
         }
     }
 
     /* -- Level 4: + - -- */
-    if (prec <= 4) {
+    if (prec <= 4)
+    {
         OpMatch m = find_binary_op_rtl(src, 4);
-        if (m.pos) {
+        if (m.pos)
+        {
             char left[MAX_LINE], right[MAX_LINE];
-            trimcpy(left,  src,           m.pos);
+            trimcpy(left, src, m.pos);
             trimcpy(right, m.pos + m.len, src + strlen(src));
-            Value lv = eval_at_prec(left,  4);
+            Value lv = eval_at_prec(left, 4);
             Value rv = eval_at_prec(right, 5);
             if (lv.type != VT_NUM || rv.type != VT_NUM)
                 vyom_error("'+'/'-' requires numeric operands");
@@ -1118,27 +1369,36 @@ eval_at_prec(const char *raw, int prec)
     }
 
     /* -- Level 5: * / // % -- */
-    if (prec <= 5) {
+    if (prec <= 5)
+    {
         OpMatch m = find_binary_op_rtl(src, 5);
-        if (m.pos) {
+        if (m.pos)
+        {
             char left[MAX_LINE], right[MAX_LINE];
-            trimcpy(left,  src,           m.pos);
+            trimcpy(left, src, m.pos);
             trimcpy(right, m.pos + m.len, src + strlen(src));
-            Value lv = eval_at_prec(left,  5);
+            Value lv = eval_at_prec(left, 5);
             Value rv = eval_at_prec(right, 6);
             if (lv.type != VT_NUM || rv.type != VT_NUM)
                 vyom_error("arithmetic requires numeric operands");
-            if (m.op1 == '*') return make_num(lv.num * rv.num);
-            if (m.op1 == '%') {
-                if (rv.num == 0.0) vyom_error("modulo by zero");
+            if (m.op1 == '*')
+                return make_num(lv.num * rv.num);
+            if (m.op1 == '%')
+            {
+                if (rv.num == 0.0)
+                    vyom_error("modulo by zero");
                 return make_num(fmod(lv.num, rv.num));
             }
-            if (m.op1 == '/' && m.op2 == '/') {
-                if (rv.num == 0.0) vyom_error("integer division by zero");
+            if (m.op1 == '/' && m.op2 == '/')
+            {
+                if (rv.num == 0.0)
+                    vyom_error("integer division by zero");
                 return make_num((double)(long long)(lv.num / rv.num));
             }
-            if (m.op1 == '/') {
-                if (rv.num == 0.0) vyom_error("division by zero");
+            if (m.op1 == '/')
+            {
+                if (rv.num == 0.0)
+                    vyom_error("division by zero");
                 return make_num(lv.num / rv.num);
             }
         }
@@ -1169,27 +1429,40 @@ static void
 strip_comment(char *line)
 {
     int in_str = 0;
-    for (char *p = line; *p; p++) {
-        if (*p == '"') in_str = !in_str;
-        if (!in_str && *p == '#') { *p = '\0'; break; }
+    for (char *p = line; *p; p++)
+    {
+        if (*p == '"')
+            in_str = !in_str;
+        if (!in_str && *p == '#')
+        {
+            *p = '\0';
+            break;
+        }
     }
     /* right-trim */
     int n = (int)strlen(line);
-    while (n > 0 && isspace((unsigned char)line[n-1])) line[--n] = '\0';
+    while (n > 0 && isspace((unsigned char)line[n - 1]))
+        line[--n] = '\0';
 }
 
 static int if_chain_end(int i); /* forward */
 
 /* (skip_if_chain is now if_chain_end — defined above with exec_if) */
-static int skip_if_chain(int i, int end) { (void)end; return if_chain_end(i); }
+static int skip_if_chain(int i, int end)
+{
+    (void)end;
+    return if_chain_end(i);
+}
 
 /* Execute a range of lines [start, end) at current scope */
 static void
 exec_block(int start, int end)
 {
     int i = start;
-    while (i < end) {
-        if (g_ret_flag || g_brk_flag || g_cont_flag) break;
+    while (i < end)
+    {
+        if (g_ret_flag || g_brk_flag || g_cont_flag)
+            break;
 
         char line[MAX_LINE];
         strncpy(line, g_lines[i].text, MAX_LINE - 1);
@@ -1197,23 +1470,37 @@ exec_block(int start, int end)
         strip_comment(line);
 
         const char *t = skip_ws(line);
-        if (!*t) { i++; continue; }
+        if (!*t)
+        {
+            i++;
+            continue;
+        }
 
         /* elif/else are handled by exec_if, not as standalone statements */
-        if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4)) { i++; continue; }
+        if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4))
+        {
+            i++;
+            continue;
+        }
 
         g_cur_lineno = g_lines[i].lineno;
         exec_stmt(i);
 
         /* skip compound block lines so we don't re-execute elif/else/body */
-        if (!strncmp(t, "if",    2) && (t[2] == ' ' || t[2] == '\t')) {
-            i = skip_if_chain(i, end); continue;
+        if (!strncmp(t, "if", 2) && (t[2] == ' ' || t[2] == '\t'))
+        {
+            i = skip_if_chain(i, end);
+            continue;
         }
-        if (!strncmp(t, "while", 5) && (t[5] == ' ' || t[5] == '\t')) {
-            i = block_end(i); continue;
+        if (!strncmp(t, "while", 5) && (t[5] == ' ' || t[5] == '\t'))
+        {
+            i = block_end(i);
+            continue;
         }
-        if (!strncmp(t, "for",   3) && (t[3] == ' ' || t[3] == '\t')) {
-            i = block_end(i); continue;
+        if (!strncmp(t, "for", 3) && (t[3] == ' ' || t[3] == '\t'))
+        {
+            i = block_end(i);
+            continue;
         }
         i++;
     }
@@ -1226,13 +1513,19 @@ exec_block(int start, int end)
 static void
 exec_print(const char *args_src)
 {
-    if (!*args_src) { printf("\n"); return; }
+    if (!*args_src)
+    {
+        printf("\n");
+        return;
+    }
 
     char argv[MAX_ARGS][MAX_LINE];
-    int  argc = split_args(args_src, argv, MAX_ARGS);
+    int argc = split_args(args_src, argv, MAX_ARGS);
 
-    for (int i = 0; i < argc; i++) {
-        if (i) printf(" ");
+    for (int i = 0; i < argc; i++)
+    {
+        if (i)
+            printf(" ");
 
         /* Check if it's an array variable — print its contents */
         const char *a = skip_ws(argv[i]);
@@ -1240,26 +1533,38 @@ exec_print(const char *args_src)
         /* Check for bare array name (no indexing, no operators) */
         {
             const char *p = a;
-            while (is_ident_char(*p)) p++;
+            while (is_ident_char(*p))
+                p++;
             const char *after = skip_ws(p);
-            if (*after == '\0') {
+            if (*after == '\0')
+            {
                 /* plain identifier — could be array */
                 Value v;
-                if (var_get(a, &v) && v.type == VT_ARR) {
+                if (var_get(a, &v) && v.type == VT_ARR)
+                {
                     /* print all elements space-separated */
                     ArrayData *ad = v.arr;
-                    if (ad->cols > 0) {
+                    if (ad->cols > 0)
+                    {
                         /* 2D: print row by row */
-                        for (int r = 0; r < ad->rows; r++) {
-                            if (r) printf("\n");
-                            for (int c = 0; c < ad->cols; c++) {
-                                if (c) printf(" ");
+                        for (int r = 0; r < ad->rows; r++)
+                        {
+                            if (r)
+                                printf("\n");
+                            for (int c = 0; c < ad->cols; c++)
+                            {
+                                if (c)
+                                    printf(" ");
                                 printf("%g", ad->data.nums[r * ad->cols + c]);
                             }
                         }
-                    } else {
-                        for (int k = 0; k < ad->size; k++) {
-                            if (k) printf(" ");
+                    }
+                    else
+                    {
+                        for (int k = 0; k < ad->size; k++)
+                        {
+                            if (k)
+                                printf(" ");
                             if (ad->elem_type == VT_NUM)
                                 printf("%g", ad->data.nums[k]);
                             else
@@ -1269,20 +1574,24 @@ exec_print(const char *args_src)
                     arr_decref(v.arr);
                     continue;
                 }
-                if (v.type == VT_ARR) arr_decref(v.arr); /* decref if we got it */
+                if (v.type == VT_ARR)
+                    arr_decref(v.arr); /* decref if we got it */
             }
         }
 
         /* General expression */
         Value v = eval_expr(argv[i]);
-        if (v.type == VT_NUM) {
+        if (v.type == VT_NUM)
+        {
             /* Print integers without decimal point */
             if (v.num == (long long)v.num &&
                 v.num >= -1e15 && v.num <= 1e15)
                 printf("%lld", (long long)v.num);
             else
                 printf("%g", v.num);
-        } else {
+        }
+        else
+        {
             printf("%s", v.str);
         }
         arr_decref(v.arr);
@@ -1306,7 +1615,8 @@ if_chain_end(int i)
     /* Start past the `if` body */
     int j = block_end(i);
     /* Keep consuming elif/else clauses at the same indent */
-    while (j < g_nlines && g_lines[j].indent == base) {
+    while (j < g_nlines && g_lines[j].indent == base)
+    {
         const char *s = skip_ws(g_lines[j].text);
         if (!strncmp(s, "elif", 4) || !strncmp(s, "else", 4))
             j = block_end(j);
@@ -1332,12 +1642,16 @@ exec_if(int i)
 
     /* Scan forward: after the if body, look for elif/else at same indent */
     int j = block_end(i);
-    while (j < g_nlines && g_lines[j].indent == base && nheaders < 64) {
+    while (j < g_nlines && g_lines[j].indent == base && nheaders < 64)
+    {
         const char *s = skip_ws(g_lines[j].text);
-        if (!strncmp(s, "elif", 4) || !strncmp(s, "else", 4)) {
+        if (!strncmp(s, "elif", 4) || !strncmp(s, "else", 4))
+        {
             headers[nheaders++] = j;
             j = block_end(j);
-        } else {
+        }
+        else
+        {
             break;
         }
     }
@@ -1345,7 +1659,8 @@ exec_if(int i)
     int chain_end = j;
 
     /* Process each clause in order */
-    for (int ci = 0; ci < nheaders; ci++) {
+    for (int ci = 0; ci < nheaders; ci++)
+    {
         int hi = headers[ci];
 
         char hline[MAX_LINE];
@@ -1355,26 +1670,44 @@ exec_if(int i)
 
         /* Body of this clause runs from hi+1 to the next header (or chain_end) */
         int body_start = hi + 1;
-        int body_end   = (ci + 1 < nheaders) ? headers[ci + 1] : chain_end;
+        int body_end = (ci + 1 < nheaders) ? headers[ci + 1] : chain_end;
 
         /* ---- if clause ---- */
-        if (!strncmp(ht, "if", 2) && (ht[2] == ' ' || ht[2] == '\t')) {
+        if (!strncmp(ht, "if", 2) && (ht[2] == ' ' || ht[2] == '\t'))
+        {
             char *cond_src = ht + 2;
             /* find last depth-0 colon */
             char *last_colon = NULL;
             int depth = 0, in_s = 0;
-            for (char *pp = cond_src; *pp; pp++) {
-                if (*pp == '"') { in_s = !in_s; continue; }
-                if (in_s) continue;
-                if (*pp == '(' || *pp == '[') { depth++; continue; }
-                if (*pp == ')' || *pp == ']') { depth--; continue; }
-                if (depth == 0 && *pp == ':') last_colon = pp;
+            for (char *pp = cond_src; *pp; pp++)
+            {
+                if (*pp == '"')
+                {
+                    in_s = !in_s;
+                    continue;
+                }
+                if (in_s)
+                    continue;
+                if (*pp == '(' || *pp == '[')
+                {
+                    depth++;
+                    continue;
+                }
+                if (*pp == ')' || *pp == ']')
+                {
+                    depth--;
+                    continue;
+                }
+                if (depth == 0 && *pp == ':')
+                    last_colon = pp;
             }
-            if (!last_colon) vyom_error("missing ':' in if statement");
+            if (!last_colon)
+                vyom_error("missing ':' in if statement");
             *last_colon = '\0';
 
             double cv = eval_expr(skip_ws(cond_src)).num;
-            if (cv != 0.0) {
+            if (cv != 0.0)
+            {
                 exec_block(body_start, body_end);
                 return;
             }
@@ -1382,22 +1715,40 @@ exec_if(int i)
         }
 
         /* ---- elif clause ---- */
-        if (!strncmp(ht, "elif", 4) && (ht[4] == ' ' || ht[4] == '\t')) {
+        if (!strncmp(ht, "elif", 4) && (ht[4] == ' ' || ht[4] == '\t'))
+        {
             char *cond_src = ht + 4;
             char *last_colon = NULL;
             int depth = 0, in_s = 0;
-            for (char *pp = cond_src; *pp; pp++) {
-                if (*pp == '"') { in_s = !in_s; continue; }
-                if (in_s) continue;
-                if (*pp == '(' || *pp == '[') { depth++; continue; }
-                if (*pp == ')' || *pp == ']') { depth--; continue; }
-                if (depth == 0 && *pp == ':') last_colon = pp;
+            for (char *pp = cond_src; *pp; pp++)
+            {
+                if (*pp == '"')
+                {
+                    in_s = !in_s;
+                    continue;
+                }
+                if (in_s)
+                    continue;
+                if (*pp == '(' || *pp == '[')
+                {
+                    depth++;
+                    continue;
+                }
+                if (*pp == ')' || *pp == ']')
+                {
+                    depth--;
+                    continue;
+                }
+                if (depth == 0 && *pp == ':')
+                    last_colon = pp;
             }
-            if (!last_colon) vyom_error("missing ':' in elif");
+            if (!last_colon)
+                vyom_error("missing ':' in elif");
             *last_colon = '\0';
 
             double cv = eval_expr(skip_ws(cond_src)).num;
-            if (cv != 0.0) {
+            if (cv != 0.0)
+            {
                 exec_block(body_start, body_end);
                 return;
             }
@@ -1405,7 +1756,8 @@ exec_if(int i)
         }
 
         /* ---- else clause ---- */
-        if (!strncmp(ht, "else", 4)) {
+        if (!strncmp(ht, "else", 4))
+        {
             exec_block(body_start, body_end);
             return;
         }
@@ -1426,28 +1778,31 @@ exec_while(int i)
     char *t = (char *)skip_ws(line);
 
     char *cond_src = t + 5; /* skip "while" */
-    char *colon    = strrchr(cond_src, ':');
-    if (!colon) vyom_error("missing ':' in while statement");
+    char *colon = strrchr(cond_src, ':');
+    if (!colon)
+        vyom_error("missing ':' in while statement");
     *colon = '\0';
 
     char cond_buf[MAX_LINE];
     strncpy(cond_buf, skip_ws(cond_src), MAX_LINE - 1);
 
     int body_start = i + 1;
-    int body_end   = block_end(i);
+    int body_end = block_end(i);
 
     scope_push(0, 1);
 
-    while (eval_expr(cond_buf).num != 0.0) {
-        g_brk_flag  = 0;
+    while (eval_expr(cond_buf).num != 0.0)
+    {
+        g_brk_flag = 0;
         g_cont_flag = 0;
         exec_block(body_start, body_end);
-        if (g_ret_flag || g_brk_flag) break;
+        if (g_ret_flag || g_brk_flag)
+            break;
         g_cont_flag = 0;
     }
 
     scope_pop();
-    g_brk_flag  = 0;
+    g_brk_flag = 0;
     g_cont_flag = 0;
 }
 
@@ -1463,26 +1818,39 @@ static int try_assignment(const char *t, int is_typed, ValType decl_type, int is
 static void
 exec_simple_stmt(const char *stmt_src)
 {
-    if (!stmt_src || !*stmt_src) return;
+    if (!stmt_src || !*stmt_src)
+        return;
 
     char buf[MAX_LINE];
     strncpy(buf, stmt_src, MAX_LINE - 1);
     buf[MAX_LINE - 1] = '\0';
     char *t = (char *)skip_ws(buf);
-    if (!*t) return;
+    if (!*t)
+        return;
 
-    int     is_typed  = 0;
+    int is_typed = 0;
     ValType decl_type = VT_NUM;
 
     if (!strncmp(t, "const", 5) && (t[5] == ' ' || t[5] == '\t'))
         t = (char *)skip_ws(t + 5);
 
-    if (!strncmp(t, "int", 3) && (t[3] == ' ' || t[3] == '\t')) {
-        is_typed = 1; decl_type = VT_NUM; t = (char *)skip_ws(t + 3);
-    } else if (!strncmp(t, "double", 6) && (t[6] == ' ' || t[6] == '\t')) {
-        is_typed = 1; decl_type = VT_NUM; t = (char *)skip_ws(t + 6);
-    } else if (!strncmp(t, "string", 6) && (t[6] == ' ' || t[6] == '\t')) {
-        is_typed = 1; decl_type = VT_STR; t = (char *)skip_ws(t + 6);
+    if (!strncmp(t, "int", 3) && (t[3] == ' ' || t[3] == '\t'))
+    {
+        is_typed = 1;
+        decl_type = VT_NUM;
+        t = (char *)skip_ws(t + 3);
+    }
+    else if (!strncmp(t, "double", 6) && (t[6] == ' ' || t[6] == '\t'))
+    {
+        is_typed = 1;
+        decl_type = VT_NUM;
+        t = (char *)skip_ws(t + 6);
+    }
+    else if (!strncmp(t, "string", 6) && (t[6] == ' ' || t[6] == '\t'))
+    {
+        is_typed = 1;
+        decl_type = VT_STR;
+        t = (char *)skip_ws(t + 6);
     }
 
     if (!try_assignment(t, is_typed, decl_type, 0))
@@ -1499,10 +1867,12 @@ exec_for_cstyle(int i)
 
     /* for ( init ; cond ; step ) : */
     char *paren_start = strchr(t, '(');
-    if (!paren_start) vyom_error("for loop requires '('");
+    if (!paren_start)
+        vyom_error("for loop requires '('");
 
     const char *paren_end = scan_to(paren_start + 1, ')');
-    if (!paren_end) vyom_error("unmatched '(' in for loop");
+    if (!paren_end)
+        vyom_error("unmatched '(' in for loop");
 
     char clause[MAX_LINE];
     trimcpy(clause, paren_start + 1, paren_end);
@@ -1512,52 +1882,84 @@ exec_for_cstyle(int i)
     char *s1 = NULL, *s2 = NULL;
     {
         int depth = 0, in_str = 0;
-        for (char *p = clause; *p; p++) {
-            if (*p == '"') { in_str = !in_str; continue; }
-            if (in_str) continue;
-            if (*p == '(' || *p == '[') { depth++; continue; }
-            if (*p == ')' || *p == ']') { depth--; continue; }
-            if (depth == 0 && *p == ';') {
-                if (!s1) { s1 = p; }
-                else if (!s2) { s2 = p; break; }
+        for (char *p = clause; *p; p++)
+        {
+            if (*p == '"')
+            {
+                in_str = !in_str;
+                continue;
+            }
+            if (in_str)
+                continue;
+            if (*p == '(' || *p == '[')
+            {
+                depth++;
+                continue;
+            }
+            if (*p == ')' || *p == ']')
+            {
+                depth--;
+                continue;
+            }
+            if (depth == 0 && *p == ';')
+            {
+                if (!s1)
+                {
+                    s1 = p;
+                }
+                else if (!s2)
+                {
+                    s2 = p;
+                    break;
+                }
             }
         }
     }
-    if (!s1 || !s2) vyom_error("for loop requires two semicolons");
-    *s1 = '\0'; *s2 = '\0';
+    if (!s1 || !s2)
+        vyom_error("for loop requires two semicolons");
+    *s1 = '\0';
+    *s2 = '\0';
 
     char init_src[MAX_LINE], cond_src[MAX_LINE], step_src[MAX_LINE];
-    strncpy(init_src, skip_ws(clause),  MAX_LINE - 1);
+    strncpy(init_src, skip_ws(clause), MAX_LINE - 1);
     strncpy(cond_src, skip_ws(s1 + 1), MAX_LINE - 1);
     strncpy(step_src, skip_ws(s2 + 1), MAX_LINE - 1);
     /* right-trim */
-    for (char *p = init_src + strlen(init_src) - 1; p >= init_src && isspace((unsigned char)*p); *p-- = '\0');
-    for (char *p = cond_src + strlen(cond_src) - 1; p >= cond_src && isspace((unsigned char)*p); *p-- = '\0');
-    for (char *p = step_src + strlen(step_src) - 1; p >= step_src && isspace((unsigned char)*p); *p-- = '\0');
+    for (char *p = init_src + strlen(init_src) - 1; p >= init_src && isspace((unsigned char)*p); *p-- = '\0')
+        ;
+    for (char *p = cond_src + strlen(cond_src) - 1; p >= cond_src && isspace((unsigned char)*p); *p-- = '\0')
+        ;
+    for (char *p = step_src + strlen(step_src) - 1; p >= step_src && isspace((unsigned char)*p); *p-- = '\0')
+        ;
 
     int body_start = i + 1;
-    int body_end   = block_end(i);
+    int body_end = block_end(i);
 
     scope_push(0, 1);
 
     /* init */
-    if (*init_src) exec_simple_stmt(init_src);
+    if (*init_src)
+        exec_simple_stmt(init_src);
 
-    while (!*cond_src || eval_expr(cond_src).num != 0.0) {
-        g_brk_flag  = 0;
+    while (!*cond_src || eval_expr(cond_src).num != 0.0)
+    {
+        g_brk_flag = 0;
         g_cont_flag = 0;
 
         exec_block(body_start, body_end);
-        if (g_ret_flag || g_brk_flag) break;
+        if (g_ret_flag || g_brk_flag)
+            break;
         g_cont_flag = 0;
 
         /* step */
-        if (*step_src) exec_simple_stmt(step_src);
-        if (g_ret_flag) break;
+        if (*step_src)
+            exec_simple_stmt(step_src);
+        if (g_ret_flag)
+            break;
     }
 
     scope_pop();
-    g_brk_flag  = 0;
+    g_brk_flag = 0;
     g_cont_flag = 0;
 }
 
@@ -1575,56 +1977,70 @@ exec_for_range(int i)
 
     /* for <var> in range(...): */
     char *after_for = t + 3;
-    while (*after_for == ' ' || *after_for == '\t') after_for++;
+    while (*after_for == ' ' || *after_for == '\t')
+        after_for++;
 
     char *in_kw = strstr(after_for, " in ");
-    if (!in_kw) vyom_error("for-in loop requires 'in' keyword");
+    if (!in_kw)
+        vyom_error("for-in loop requires 'in' keyword");
 
     char loop_var[64];
     trimcpy(loop_var, after_for, in_kw);
 
     char *range_kw = strstr(in_kw + 4, "range");
-    if (!range_kw) vyom_error("for-in requires range()");
+    if (!range_kw)
+        vyom_error("for-in requires range()");
 
     char *paren = strchr(range_kw, '(');
-    if (!paren) vyom_error("range requires '('");
+    if (!paren)
+        vyom_error("range requires '('");
 
     const char *paren_end = scan_to(paren + 1, ')');
-    if (!paren_end) vyom_error("unmatched '(' in range()");
+    if (!paren_end)
+        vyom_error("unmatched '(' in range()");
 
     char range_args[MAX_LINE];
     trimcpy(range_args, paren + 1, paren_end);
 
     char argv[4][MAX_LINE];
-    int  argc = split_args(range_args, argv, 3);
+    int argc = split_args(range_args, argv, 3);
 
     double start = 0, stop = 0, step = 1;
-    if (argc == 1) {
-        stop  = eval_expr(argv[0]).num;
-    } else if (argc == 2) {
+    if (argc == 1)
+    {
+        stop = eval_expr(argv[0]).num;
+    }
+    else if (argc == 2)
+    {
         start = eval_expr(argv[0]).num;
-        stop  = eval_expr(argv[1]).num;
-    } else if (argc == 3) {
+        stop = eval_expr(argv[1]).num;
+    }
+    else if (argc == 3)
+    {
         start = eval_expr(argv[0]).num;
-        stop  = eval_expr(argv[1]).num;
-        step  = eval_expr(argv[2]).num;
-    } else {
+        stop = eval_expr(argv[1]).num;
+        step = eval_expr(argv[2]).num;
+    }
+    else
+    {
         vyom_error("range() takes 1–3 arguments");
     }
 
-    if (step == 0.0) vyom_error("range() step cannot be zero");
+    if (step == 0.0)
+        vyom_error("range() step cannot be zero");
 
     int body_start = i + 1;
-    int body_end   = block_end(i);
+    int body_end = block_end(i);
 
     scope_push(0, 1);
 
     double idx = start;
-    while ((step > 0 && idx < stop) || (step < 0 && idx > stop)) {
+    while ((step > 0 && idx < stop) || (step < 0 && idx > stop))
+    {
         /* Clear per-iteration flags BEFORE assigning the loop variable
            so the variable is always set to the current iteration value
            with a clean flag state.                                      */
-        g_brk_flag  = 0;
+        g_brk_flag = 0;
         g_cont_flag = 0;
 
         /* Assign loop variable for THIS iteration */
@@ -1633,14 +2049,15 @@ exec_for_range(int i)
 
         /* Execute loop body */
         exec_block(body_start, body_end);
-        if (g_ret_flag || g_brk_flag) break;
+        if (g_ret_flag || g_brk_flag)
+            break;
         g_cont_flag = 0;
 
         idx += step;
     }
 
     scope_pop();
-    g_brk_flag  = 0;
+    g_brk_flag = 0;
     g_cont_flag = 0;
 }
 
@@ -1658,13 +2075,15 @@ static void
 exec_array_decl(const char *decl, ValType elem_type, int is_const)
 {
     const char *bracket = strchr(decl, '[');
-    if (!bracket) vyom_error("expected '[' in array declaration");
+    if (!bracket)
+        vyom_error("expected '[' in array declaration");
 
     char varname[64];
     trimcpy(varname, decl, bracket);
 
     const char *bracket_end = scan_to(bracket + 1, ']');
-    if (!bracket_end) vyom_error("unmatched '[' in array declaration");
+    if (!bracket_end)
+        vyom_error("unmatched '[' in array declaration");
 
     char size_expr[MAX_LINE];
     trimcpy(size_expr, bracket + 1, bracket_end);
@@ -1677,12 +2096,14 @@ exec_array_decl(const char *decl, ValType elem_type, int is_const)
     const char *after_first = skip_ws(bracket_end + 1);
 
     /* 2D array? */
-    if (*after_first == '[') {
+    if (*after_first == '[')
+    {
         if (elem_type != VT_NUM)
             vyom_error("2D arrays only support numeric types");
 
         const char *bracket2_end = scan_to(after_first + 1, ']');
-        if (!bracket2_end) vyom_error("unmatched '[' in 2D array declaration");
+        if (!bracket2_end)
+            vyom_error("unmatched '[' in 2D array declaration");
 
         char cols_expr[MAX_LINE];
         trimcpy(cols_expr, after_first + 1, bracket2_end);
@@ -1697,13 +2118,16 @@ exec_array_decl(const char *decl, ValType elem_type, int is_const)
         const char *after_decl = skip_ws(bracket2_end + 1);
 
         /* optional initializer */
-        if (*after_decl == '=') {
+        if (*after_decl == '=')
+        {
             const char *init = skip_ws(after_decl + 1);
-            if (*init != '[') vyom_error("2D array initializer must start with '['");
+            if (*init != '[')
+                vyom_error("2D array initializer must start with '['");
 
             /* outer bracket */
             const char *outer_end = scan_to(init + 1, ']');
-            if (!outer_end) vyom_error("unmatched '[' in 2D array initializer");
+            if (!outer_end)
+                vyom_error("unmatched '[' in 2D array initializer");
 
             char init_inner[MAX_LINE];
             trimcpy(init_inner, init + 1, outer_end);
@@ -1711,31 +2135,37 @@ exec_array_decl(const char *decl, ValType elem_type, int is_const)
             /* split rows by '],' pattern — rows are sub-arrays */
             int row = 0;
             const char *p = skip_ws(init_inner);
-            while (*p && row < dim1) {
-                if (*p != '[') break;
+            while (*p && row < dim1)
+            {
+                if (*p != '[')
+                    break;
                 const char *row_end = scan_to(p + 1, ']');
-                if (!row_end) vyom_error("unmatched '[' in 2D row initializer");
+                if (!row_end)
+                    vyom_error("unmatched '[' in 2D row initializer");
 
                 char row_str[MAX_LINE];
                 trimcpy(row_str, p + 1, row_end);
 
                 char elems[MAX_ARRAY_TOTAL > 256 ? 256 : MAX_ARRAY_TOTAL][MAX_LINE];
-                int  nelem = *row_str ? split_args(row_str, elems,
-                             dim2 < 256 ? dim2 : 256) : 0;
+                int nelem = *row_str ? split_args(row_str, elems,
+                                                  dim2 < 256 ? dim2 : 256)
+                                     : 0;
 
-                for (int c = 0; c < nelem && c < dim2; c++) {
+                for (int c = 0; c < nelem && c < dim2; c++)
+                {
                     Value ev = eval_expr(elems[c]);
                     a->data.nums[row * dim2 + c] = ev.num;
                 }
                 row++;
                 p = skip_ws(row_end + 1);
-                if (*p == ',') p = skip_ws(p + 1);
+                if (*p == ',')
+                    p = skip_ws(p + 1);
             }
         }
 
         Value vv = {0};
         vv.type = VT_ARR;
-        vv.arr  = a;
+        vv.arr = a;
         var_set(varname, vv, 1, is_const);
         arr_decref(a); /* var_set did incref */
         return;
@@ -1746,26 +2176,33 @@ exec_array_decl(const char *decl, ValType elem_type, int is_const)
 
     const char *after_decl = skip_ws(after_first);
 
-    if (*after_decl == '=') {
+    if (*after_decl == '=')
+    {
         const char *init = skip_ws(after_decl + 1);
-        if (*init != '[') vyom_error("array initializer must start with '['");
+        if (*init != '[')
+            vyom_error("array initializer must start with '['");
 
         const char *init_end = scan_to(init + 1, ']');
-        if (!init_end) vyom_error("unmatched '[' in array initializer");
+        if (!init_end)
+            vyom_error("unmatched '[' in array initializer");
 
         char init_inner[MAX_LINE];
         trimcpy(init_inner, init + 1, init_end);
 
         /* split by commas */
-        int   max_elems = dim1 < 256 ? dim1 : 256;
-        char  elems[256][MAX_LINE];
-        int   nelem = *init_inner ? split_args(init_inner, elems, max_elems) : 0;
+        int max_elems = dim1 < 256 ? dim1 : 256;
+        char elems[256][MAX_LINE];
+        int nelem = *init_inner ? split_args(init_inner, elems, max_elems) : 0;
 
-        for (int k = 0; k < nelem && k < dim1; k++) {
+        for (int k = 0; k < nelem && k < dim1; k++)
+        {
             Value ev = eval_expr(elems[k]);
-            if (elem_type == VT_NUM) {
+            if (elem_type == VT_NUM)
+            {
                 a->data.nums[k] = ev.num;
-            } else {
+            }
+            else
+            {
                 if (ev.type != VT_STR)
                     vyom_error("string array requires string values");
                 free(a->data.strs[k]);
@@ -1776,7 +2213,7 @@ exec_array_decl(const char *decl, ValType elem_type, int is_const)
 
     Value vv = {0};
     vv.type = VT_ARR;
-    vv.arr  = a;
+    vv.arr = a;
     var_set(varname, vv, 1, is_const);
     arr_decref(a);
 }
@@ -1793,18 +2230,34 @@ static int
 try_assignment(const char *t, int is_typed, ValType decl_type, int is_const)
 {
     /* Find '=' that is not ==, !=, <=, >= */
-    int   depth  = 0;
-    int   in_str = 0;
+    int depth = 0;
+    int in_str = 0;
     const char *eq = NULL;
 
-    for (const char *p = t; *p; p++) {
-        if (*p == '"') { in_str = !in_str; continue; }
-        if (in_str)    continue;
-        if (*p == '(' || *p == '[') { depth++; continue; }
-        if (*p == ')' || *p == ']') { depth--; continue; }
-        if (depth != 0) continue;
+    for (const char *p = t; *p; p++)
+    {
+        if (*p == '"')
+        {
+            in_str = !in_str;
+            continue;
+        }
+        if (in_str)
+            continue;
+        if (*p == '(' || *p == '[')
+        {
+            depth++;
+            continue;
+        }
+        if (*p == ')' || *p == ']')
+        {
+            depth--;
+            continue;
+        }
+        if (depth != 0)
+            continue;
 
-        if (*p == '=' && p[1] != '=') {
+        if (*p == '=' && p[1] != '=')
+        {
             /* make sure previous char isn't !, <, > */
             if (p > t && (p[-1] == '!' || p[-1] == '<' || p[-1] == '>'))
                 continue;
@@ -1813,11 +2266,13 @@ try_assignment(const char *t, int is_typed, ValType decl_type, int is_const)
         }
     }
 
-    if (!eq) return 0;
+    if (!eq)
+        return 0;
 
     /* RHS */
     const char *rhs_src = skip_ws(eq + 1);
-    if (!*rhs_src) vyom_error("empty right-hand side in assignment");
+    if (!*rhs_src)
+        vyom_error("empty right-hand side in assignment");
 
     /* LHS — check for array index */
     char lhs_buf[MAX_LINE];
@@ -1825,20 +2280,25 @@ try_assignment(const char *t, int is_typed, ValType decl_type, int is_const)
     char *lhs = lhs_buf;
 
     char *bracket = strchr(lhs, '[');
-    if (bracket) {
+    if (bracket)
+    {
         /* array element assignment */
         char varname[64];
         trimcpy(varname, lhs, bracket);
 
         Var *varp = var_find(varname);
-        if (!varp) vyom_error("undefined variable '%s'", varname);
-        if (varp->is_const) vyom_error("cannot modify const array '%s'", varname);
-        if (varp->val.type != VT_ARR) vyom_error("'%s' is not an array", varname);
+        if (!varp)
+            vyom_error("undefined variable '%s'", varname);
+        if (varp->is_const)
+            vyom_error("cannot modify const array '%s'", varname);
+        if (varp->val.type != VT_ARR)
+            vyom_error("'%s' is not an array", varname);
 
         ArrayData *a = varp->val.arr;
 
         const char *rb1 = scan_to(bracket + 1, ']');
-        if (!rb1) vyom_error("unmatched '[' in array assignment");
+        if (!rb1)
+            vyom_error("unmatched '[' in array assignment");
 
         char idx1_expr[MAX_LINE];
         trimcpy(idx1_expr, bracket + 1, rb1);
@@ -1850,10 +2310,13 @@ try_assignment(const char *t, int is_typed, ValType decl_type, int is_const)
         const char *after1 = skip_ws(rb1 + 1);
 
         /* 2D? */
-        if (a->cols > 0) {
-            if (*after1 != '[') vyom_error("2D array requires two indices");
+        if (a->cols > 0)
+        {
+            if (*after1 != '[')
+                vyom_error("2D array requires two indices");
             const char *rb2 = scan_to(after1 + 1, ']');
-            if (!rb2) vyom_error("unmatched '[' in 2D array assignment");
+            if (!rb2)
+                vyom_error("unmatched '[' in 2D array assignment");
 
             char idx2_expr[MAX_LINE];
             trimcpy(idx2_expr, after1 + 1, rb2);
@@ -1868,7 +2331,8 @@ try_assignment(const char *t, int is_typed, ValType decl_type, int is_const)
                 vyom_error("2D array col index %d out of bounds (%d cols)", idx2, a->cols);
 
             Value rv = eval_expr(rhs_src);
-            if (rv.type != VT_NUM) vyom_error("2D array element must be numeric");
+            if (rv.type != VT_NUM)
+                vyom_error("2D array element must be numeric");
             a->data.nums[idx1 * a->cols + idx2] = rv.num;
             return 1;
         }
@@ -1878,11 +2342,16 @@ try_assignment(const char *t, int is_typed, ValType decl_type, int is_const)
             vyom_error("array index %d out of bounds (size %d)", idx1, a->size);
 
         Value rv = eval_expr(rhs_src);
-        if (a->elem_type == VT_NUM) {
-            if (rv.type != VT_NUM) vyom_error("numeric array requires numeric value");
+        if (a->elem_type == VT_NUM)
+        {
+            if (rv.type != VT_NUM)
+                vyom_error("numeric array requires numeric value");
             a->data.nums[idx1] = rv.num;
-        } else {
-            if (rv.type != VT_STR) vyom_error("string array requires string value");
+        }
+        else
+        {
+            if (rv.type != VT_STR)
+                vyom_error("string array requires string value");
             free(a->data.strs[idx1]);
             a->data.strs[idx1] = strdup(rv.str);
         }
@@ -1917,57 +2386,76 @@ exec_stmt(int line_idx)
 {
     char line[MAX_LINE];
 
-    if (line_idx >= 0) {
+    if (line_idx >= 0)
+    {
         strncpy(line, g_lines[line_idx].text, MAX_LINE - 1);
         line[MAX_LINE - 1] = '\0';
         strip_comment(line);
         g_cur_lineno = g_lines[line_idx].lineno;
-    } else {
+    }
+    else
+    {
         /* caller set up line via exec_block — shouldn't reach here normally */
         return;
     }
 
     char *t = (char *)skip_ws(line);
-    if (!*t || *t == '#') return;
+    if (!*t || *t == '#')
+        return;
 
     /* ---- def: skip (already collected) ---- */
-    if (!strncmp(t, "def", 3) && (t[3] == ' ' || t[3] == '\t')) return;
+    if (!strncmp(t, "def", 3) && (t[3] == ' ' || t[3] == '\t'))
+        return;
 
     /* ---- elif / else: handled by exec_if ---- */
-    if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4)) return;
+    if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4))
+        return;
 
     /* ---- break ---- */
-    if (!strcmp(t, "break")) {
-        if (g_loop_depth == 0) vyom_error("'break' outside of loop");
+    if (!strcmp(t, "break"))
+    {
+        if (g_loop_depth == 0)
+            vyom_error("'break' outside of loop");
         g_brk_flag = 1;
         return;
     }
 
     /* ---- continue ---- */
-    if (!strcmp(t, "continue")) {
-        if (g_loop_depth == 0) vyom_error("'continue' outside of loop");
+    if (!strcmp(t, "continue"))
+    {
+        if (g_loop_depth == 0)
+            vyom_error("'continue' outside of loop");
         g_cont_flag = 1;
         return;
     }
 
     /* ---- return ---- */
-    if (!strncmp(t, "return", 6) && (t[6] == ' ' || t[6] == '\t' || t[6] == '\0')) {
+    if (!strncmp(t, "return", 6) && (t[6] == ' ' || t[6] == '\t' || t[6] == '\0'))
+    {
         /* check we are inside a function frame (not just global scope) */
         int in_func = 0;
-        for (int d = g_ndepth - 1; d >= 0; d--) {
-            if (g_scopes[d].is_func) { in_func = 1; break; }
+        for (int d = g_ndepth - 1; d >= 0; d--)
+        {
+            if (g_scopes[d].is_func)
+            {
+                in_func = 1;
+                break;
+            }
         }
-        if (!in_func) vyom_error("'return' outside of function");
+        if (!in_func)
+            vyom_error("'return' outside of function");
         const char *expr = skip_ws(t + 6);
-        g_ret_val  = *expr ? eval_expr(expr) : make_num(0.0);
+        g_ret_val = *expr ? eval_expr(expr) : make_num(0.0);
         g_ret_flag = 1;
         return;
     }
 
     /* ---- exit() ---- */
-    if (!strncmp(t, "exit", 4) && t[4] == '(') {
+    if (!strncmp(t, "exit", 4) && t[4] == '(')
+    {
         const char *rp = scan_to(t + 5, ')');
-        if (!rp) vyom_error("unmatched '(' in exit()");
+        if (!rp)
+            vyom_error("unmatched '(' in exit()");
         char arg[MAX_LINE];
         trimcpy(arg, t + 5, rp);
         int code = *arg ? (int)eval_expr(arg).num : 0;
@@ -1976,18 +2464,24 @@ exec_stmt(int line_idx)
     }
 
     /* ---- input() as statement (result discarded) ---- */
-    if (!strncmp(t, "input", 5) && t[5] == '(') {
+    if (!strncmp(t, "input", 5) && t[5] == '(')
+    {
         const char *rp = scan_to(t + 6, ')');
-        if (!rp) vyom_error("unmatched '(' in input()");
+        if (!rp)
+            vyom_error("unmatched '(' in input()");
         char ibuf[MAX_STR];
-        if (fgets(ibuf, sizeof(ibuf), stdin)) { /* consume and discard */ }
+        if (fgets(ibuf, sizeof(ibuf), stdin))
+        { /* consume and discard */
+        }
         return;
     }
 
     /* ---- print() ---- */
-    if (!strncmp(t, "print", 5) && t[5] == '(') {
+    if (!strncmp(t, "print", 5) && t[5] == '(')
+    {
         const char *rp = scan_to(t + 6, ')');
-        if (!rp) vyom_error("unmatched '(' in print()");
+        if (!rp)
+            vyom_error("unmatched '(' in print()");
         char args[MAX_LINE];
         trimcpy(args, t + 6, rp);
         exec_print(args);
@@ -1998,19 +2492,22 @@ exec_stmt(int line_idx)
         vyom_error("print requires parentheses: use print(...)");
 
     /* ---- if ---- */
-    if (!strncmp(t, "if", 2) && (t[2] == ' ' || t[2] == '\t')) {
+    if (!strncmp(t, "if", 2) && (t[2] == ' ' || t[2] == '\t'))
+    {
         exec_if(line_idx);
         return;
     }
 
     /* ---- while ---- */
-    if (!strncmp(t, "while", 5) && (t[5] == ' ' || t[5] == '\t')) {
+    if (!strncmp(t, "while", 5) && (t[5] == ' ' || t[5] == '\t'))
+    {
         exec_while(line_idx);
         return;
     }
 
     /* ---- for ---- */
-    if (!strncmp(t, "for", 3) && (t[3] == ' ' || t[3] == '\t')) {
+    if (!strncmp(t, "for", 3) && (t[3] == ' ' || t[3] == '\t'))
+    {
         /* distinguish for(;;) from for x in range() */
         const char *after = skip_ws(t + 3);
         if (*after == '(')
@@ -2021,58 +2518,74 @@ exec_stmt(int line_idx)
     }
 
     /* ---- const / typed declarations ---- */
-    int     is_const  = 0;
-    int     is_typed  = 0;
+    int is_const = 0;
+    int is_typed = 0;
     ValType decl_type = VT_NUM;
-    char   *decl      = t;
+    char *decl = t;
 
-    if (!strncmp(decl, "const", 5) && (decl[5] == ' ' || decl[5] == '\t')) {
+    if (!strncmp(decl, "const", 5) && (decl[5] == ' ' || decl[5] == '\t'))
+    {
         is_const = 1;
-        decl     = (char *)skip_ws(decl + 5);
+        decl = (char *)skip_ws(decl + 5);
     }
 
-    if (!strncmp(decl, "int", 3) && (decl[3] == ' ' || decl[3] == '\t')) {
-        is_typed = 1; decl_type = VT_NUM;
-        decl     = (char *)skip_ws(decl + 3);
-    } else if (!strncmp(decl, "double", 6) && (decl[6] == ' ' || decl[6] == '\t')) {
-        is_typed = 1; decl_type = VT_NUM;
-        decl     = (char *)skip_ws(decl + 6);
-    } else if (!strncmp(decl, "string", 6) && (decl[6] == ' ' || decl[6] == '\t')) {
-        is_typed = 1; decl_type = VT_STR;
-        decl     = (char *)skip_ws(decl + 6);
+    if (!strncmp(decl, "int", 3) && (decl[3] == ' ' || decl[3] == '\t'))
+    {
+        is_typed = 1;
+        decl_type = VT_NUM;
+        decl = (char *)skip_ws(decl + 3);
+    }
+    else if (!strncmp(decl, "double", 6) && (decl[6] == ' ' || decl[6] == '\t'))
+    {
+        is_typed = 1;
+        decl_type = VT_NUM;
+        decl = (char *)skip_ws(decl + 6);
+    }
+    else if (!strncmp(decl, "string", 6) && (decl[6] == ' ' || decl[6] == '\t'))
+    {
+        is_typed = 1;
+        decl_type = VT_STR;
+        decl = (char *)skip_ws(decl + 6);
     }
 
     /* Array declaration: typed keyword followed by name[...] */
-    if (is_typed && strchr(decl, '[')) {
+    if (is_typed && strchr(decl, '['))
+    {
         /* make sure the '[' comes before any '=' */
         const char *b = strchr(decl, '[');
         const char *e = strchr(decl, '=');
-        if (!e || b < e) {
+        if (!e || b < e)
+        {
             exec_array_decl(decl, decl_type, is_const);
             return;
         }
     }
 
     /* Try assignment */
-    if (try_assignment(decl, is_typed, decl_type, is_const)) return;
+    if (try_assignment(decl, is_typed, decl_type, is_const))
+        return;
 
-    if (is_const) vyom_error("const variable must be initialized");
+    if (is_const)
+        vyom_error("const variable must be initialized");
 
     /* Function call as statement */
     char *lp = strchr(t, '(');
-    if (lp) {
+    if (lp)
+    {
         char fname[64];
         trimcpy(fname, t, lp);
         Func *fn = func_find(fname);
-        if (fn) {
+        if (fn)
+        {
             const char *rp = scan_to(lp + 1, ')');
-            if (!rp) vyom_error("unmatched '(' calling '%s'", fname);
+            if (!rp)
+                vyom_error("unmatched '(' calling '%s'", fname);
 
             char args_str[MAX_LINE];
             trimcpy(args_str, lp + 1, rp);
 
             char argv[MAX_ARGS][MAX_LINE];
-            int  argc = *args_str ? split_args(args_str, argv, MAX_ARGS) : 0;
+            int argc = *args_str ? split_args(args_str, argv, MAX_ARGS) : 0;
 
             if (argc != fn->nparams)
                 vyom_error("function '%s' expects %d args, got %d",
@@ -2082,9 +2595,9 @@ exec_stmt(int line_idx)
             for (int i = 0; i < argc; i++)
                 argvals[i] = eval_expr(argv[i]);
 
-            int   old_ret  = g_ret_flag;
-            int   old_brk  = g_brk_flag;
-            int   old_cont = g_cont_flag;
+            int old_ret = g_ret_flag;
+            int old_brk = g_brk_flag;
+            int old_cont = g_cont_flag;
             Value old_rval = g_ret_val;
             g_ret_flag = g_brk_flag = g_cont_flag = 0;
 
@@ -2094,7 +2607,8 @@ exec_stmt(int line_idx)
             g_func_depth++;
             scope_push(1, 0);
 
-            for (int i = 0; i < argc; i++) {
+            for (int i = 0; i < argc; i++)
+            {
                 var_set(fn->params[i], argvals[i], 0, 0);
                 arr_decref(argvals[i].arr);
             }
@@ -2103,12 +2617,12 @@ exec_stmt(int line_idx)
             scope_pop();
             g_func_depth--;
 
-            g_ret_flag  = old_ret;
-            g_brk_flag  = old_brk;
+            g_ret_flag = old_ret;
+            g_brk_flag = old_brk;
             g_cont_flag = old_cont;
             /* discard return value — statement call */
             arr_decref(g_ret_val.arr);
-            g_ret_val   = old_rval;
+            g_ret_val = old_rval;
             return;
         }
     }
@@ -2123,7 +2637,8 @@ exec_stmt(int line_idx)
 static void
 collect_functions(void)
 {
-    for (int i = 0; i < g_nlines; i++) {
+    for (int i = 0; i < g_nlines; i++)
+    {
         char line[MAX_LINE];
         strncpy(line, g_lines[i].text, MAX_LINE - 1);
         strip_comment(line);
@@ -2133,23 +2648,27 @@ collect_functions(void)
             continue;
 
         char *after_def = (char *)skip_ws(t + 3);
-        char *paren     = strchr(after_def, '(');
-        if (!paren) vyom_error("invalid function definition (missing '(')");
+        char *paren = strchr(after_def, '(');
+        if (!paren)
+            vyom_error("invalid function definition (missing '(')");
 
-        if (g_nfuncs >= MAX_FUNCS) vyom_error("too many function definitions");
+        if (g_nfuncs >= MAX_FUNCS)
+            vyom_error("too many function definitions");
         Func *f = &g_funcs[g_nfuncs++];
         memset(f, 0, sizeof(Func));
 
         trimcpy(f->name, after_def, paren);
 
         const char *rparen = scan_to(paren + 1, ')');
-        if (!rparen) vyom_error("unmatched '(' in function definition '%s'", f->name);
+        if (!rparen)
+            vyom_error("unmatched '(' in function definition '%s'", f->name);
 
         char params_str[MAX_LINE];
         trimcpy(params_str, paren + 1, rparen);
 
         f->nparams = 0;
-        if (*params_str) {
+        if (*params_str)
+        {
             char argv[MAX_ARGS][MAX_LINE];
             int n = split_args(params_str, argv, MAX_ARGS);
             for (int k = 0; k < n; k++)
@@ -2158,7 +2677,7 @@ collect_functions(void)
         }
 
         f->body_start = i + 1;
-        f->body_end   = block_end(i);
+        f->body_end = block_end(i);
     }
 }
 
@@ -2166,15 +2685,16 @@ collect_functions(void)
  *  MAIN
  * ================================================================ */
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-    if (argc == 2 && !strcmp(argv[1], "--version")) {
+    if (argc == 2 && !strcmp(argv[1], "--version"))
+    {
         printf("Vyom v%s\n", VYOM_VERSION);
         return 0;
     }
 
-    if (argc < 2) {
+    if (argc < 2)
+    {
         fprintf(stderr, "Usage: %s <file.vy>\n", argv[0]);
         return 1;
     }
@@ -2182,16 +2702,19 @@ main(int argc, char **argv)
     strncpy(g_filename, argv[1], sizeof(g_filename) - 1);
 
     FILE *fp = fopen(argv[1], "r");
-    if (!fp) {
+    if (!fp)
+    {
         fprintf(stderr, "Cannot open file: %s\n", argv[1]);
         return 1;
     }
 
     char buf[MAX_LINE];
-    int  lineno = 1;
+    int lineno = 1;
 
-    while (fgets(buf, sizeof(buf), fp)) {
-        if (g_nlines >= MAX_LINES) {
+    while (fgets(buf, sizeof(buf), fp))
+    {
+        if (g_nlines >= MAX_LINES)
+        {
             fprintf(stderr, "Error: source file too long (max %d lines)\n", MAX_LINES);
             fclose(fp);
             return 1;
@@ -2200,16 +2723,24 @@ main(int argc, char **argv)
         /* detect indent before trimming */
         int indent = 0;
         const char *p = buf;
-        while (*p == ' ') { indent++; p++; }
-        while (*p == '\t') { indent += 4; p++; }
+        while (*p == ' ')
+        {
+            indent++;
+            p++;
+        }
+        while (*p == '\t')
+        {
+            indent += 4;
+            p++;
+        }
 
         /* store trimmed text */
         strncpy(g_lines[g_nlines].text, p, MAX_LINE - 1);
         g_lines[g_nlines].text[MAX_LINE - 1] = '\0';
         /* strip trailing newline */
         int tlen = (int)strlen(g_lines[g_nlines].text);
-        while (tlen > 0 && (g_lines[g_nlines].text[tlen-1] == '\n' ||
-                             g_lines[g_nlines].text[tlen-1] == '\r'))
+        while (tlen > 0 && (g_lines[g_nlines].text[tlen - 1] == '\n' ||
+                            g_lines[g_nlines].text[tlen - 1] == '\r'))
             g_lines[g_nlines].text[--tlen] = '\0';
 
         g_lines[g_nlines].indent = indent;
@@ -2225,31 +2756,47 @@ main(int argc, char **argv)
     collect_functions();
 
     /* Execute top-level statements */
-    for (int i = 0; i < g_nlines; i++) {
+    for (int i = 0; i < g_nlines; i++)
+    {
         char line[MAX_LINE];
         strncpy(line, g_lines[i].text, MAX_LINE - 1);
         strip_comment(line);
         const char *t = skip_ws(line);
 
-        if (!*t) continue;
+        if (!*t)
+            continue;
 
         g_cur_lineno = g_lines[i].lineno;
 
         /* Skip function definitions */
-        if (!strncmp(t, "def", 3) && (t[3] == ' ' || t[3] == '\t')) {
+        if (!strncmp(t, "def", 3) && (t[3] == ' ' || t[3] == '\t'))
+        {
             i = block_end(i) - 1;
             continue;
         }
 
         /* Skip elif/else — handled by exec_if */
-        if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4)) continue;
+        if (!strncmp(t, "elif", 4) || !strncmp(t, "else", 4))
+            continue;
 
         exec_stmt(i);
 
         /* skip past blocks */
-        if (!strncmp(t, "if",    2) && (t[2] == ' ' || t[2] == '\t')) { i = skip_if_chain(i, g_nlines) - 1; continue; }
-        if (!strncmp(t, "while", 5) && (t[5] == ' ' || t[5] == '\t')) { i = block_end(i) - 1; continue; }
-        if (!strncmp(t, "for",   3) && (t[3] == ' ' || t[3] == '\t')) { i = block_end(i) - 1; continue; }
+        if (!strncmp(t, "if", 2) && (t[2] == ' ' || t[2] == '\t'))
+        {
+            i = skip_if_chain(i, g_nlines) - 1;
+            continue;
+        }
+        if (!strncmp(t, "while", 5) && (t[5] == ' ' || t[5] == '\t'))
+        {
+            i = block_end(i) - 1;
+            continue;
+        }
+        if (!strncmp(t, "for", 3) && (t[3] == ' ' || t[3] == '\t'))
+        {
+            i = block_end(i) - 1;
+            continue;
+        }
     }
 
     cleanup_all();
