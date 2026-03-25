@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://getvyom.vercel.app">Website</a> •
-  <a href="https://github.com/Sanket-Bharadwaj/VYOM">GitHub</a> •
-  <a href="https://github.com/Sanket-Bharadwaj/VYOM/releases/latest">Download</a>
+  <a href="https://github.com/bharadwajsanket/VYOM">GitHub</a> •
+  <a href="https://github.com/bharadwajsanket/VYOM/releases/latest">Download</a>
 </p>
 
 <p align="center">
@@ -114,7 +114,7 @@ vyom --version
 Build from source:
 
 ```bash
-git clone https://github.com/Sanket-Bharadwaj/VYOM.git
+git clone https://github.com/bharadwajsanket/VYOM.git
 cd VYOM
 gcc -O2 src/vy.c -o vyom -lm
 sudo mv vyom /usr/local/bin/
