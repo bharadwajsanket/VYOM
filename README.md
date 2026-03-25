@@ -12,27 +12,23 @@
   <a href="https://github.com/Sanket-Bharadwaj/VYOM/releases/latest">Download</a>
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0-blue?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/language-C-555?style=flat-square&logo=c" alt="Language" />
+  <img src="https://img.shields.io/badge/platform-POSIX%20%7C%20Windows-lightgrey?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/dependencies-none-orange?style=flat-square" alt="Dependencies" />
+</p>
+
 ---
 
 # Vyom
 
 Vyom is a scripting language that executes source code directly.  
-There is no bytecode, no virtual machine, and no runtime optimizer.  
+No bytecode, no virtual machine, no runtime optimizer.  
 The interpreter is a single C file — around 2700 lines.
 
 **Design rule:** if you cannot trace execution line by line through the source, the design is wrong.
-
----
-
-## Status
-
-| | |
-|---|---|
-| Version | 1.0 |
-| Interpreter | ~2700 lines of C (single file) |
-| Dependencies | None — libc only |
-| Platform | POSIX, Windows |
-| License | MIT |
 
 ---
 
@@ -44,7 +40,7 @@ The interpreter is a single C file — around 2700 lines.
 - `const` variables
 
 **Variables and Expressions**
-- Assignment, arithmetic: `+ - * / // %`
+- Assignment and arithmetic: `+ - * / // %`
 - Comparisons: `== != < > <= >=`
 - Logic: `and`, `or`, `not` (short-circuit)
 - Operator precedence, parenthesised expressions
@@ -88,7 +84,7 @@ The interpreter is a single C file — around 2700 lines.
 - Division by zero detected at runtime
 - Array index out of bounds detected at runtime
 - All errors include the source line number
-- Recursion depth limit (prevents C stack overflow)
+- Recursion depth limit enforced (prevents C stack overflow)
 
 ---
 
@@ -132,34 +128,6 @@ vyom --version
 
 ---
 
-## Example
-
-```vyom
-# Fibonacci
-
-def fib(n):
-    if n <= 1:
-        return n
-    return fib(n - 1) + fib(n - 2)
-
-for i in range(8):
-    print(fib(i))
-```
-
-Output:
-```
-0
-1
-1
-2
-3
-5
-8
-13
-```
-
----
-
 ## Error Messages
 
 Errors always include the source line number:
@@ -182,9 +150,39 @@ Vyom is built around one idea: **what you write is exactly what runs.**
 - No magic behaviour
 - No silent failures
 
-The language stays small on purpose. Features are added only when they make programs clearer, not to make the language more capable in the abstract.
+The language stays small on purpose. Features are added only when they make programs clearer, not to expand what the language can do in the abstract.
 
 The interpreter is a single readable C file. If something behaves unexpectedly, the source is the documentation.
+
+---
+
+<details>
+<summary>Example — Fibonacci</summary>
+
+```vyom
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+for i in range(8):
+    print(fib(i))
+```
+
+Output:
+
+```
+0
+1
+1
+2
+3
+5
+8
+13
+```
+
+</details>
 
 ---
 
