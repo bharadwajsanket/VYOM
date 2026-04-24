@@ -31,7 +31,11 @@ The interpreter is a single C file — around 2700 lines.
 **Design rule:** if you cannot trace execution line by line through the source, the design is wrong.
 
 ---
+## Working diagram:
 
+  <img width="2116" height="4008" alt="VYOM Diagram" src="https://github.com/user-attachments/assets/478f9e96-c372-4ed1-bbbd-a633aa9dd515" />
+
+  
 ## Features
 
 **Types**
